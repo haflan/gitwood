@@ -1,20 +1,14 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"html/template"
-	"io"
-	"os"
-	"path/filepath"
-	"strings"
-	texttemplate "text/template"
-
 	_ "embed"
-
-	"github.com/go-git/go-git/v5"
 )
 
+func main() {
+	serve()
+}
+
+/*
 //go:embed templates/todos.html
 var defaultHTMLTemplate string
 
@@ -81,7 +75,7 @@ func loadTemplate(templatePath string) Template {
 	return temp
 }
 
-func main() {
+func oldMain() {
 	var (
 		fSort         string
 		fHide         string
@@ -175,3 +169,5 @@ func main() {
 	// 	Todos: drawableTodos,
 	// })
 }
+
+*/

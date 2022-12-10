@@ -6,8 +6,6 @@ import (
 	"sort"
 	"strings"
 
-	git "github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
@@ -144,11 +142,7 @@ func ReadFullTodo(f *object.File, lineNum int) (*TodoDesc, error) {
 	return todo, nil
 }
 
-func FindCommitTodos(repo *git.Repository, hash plumbing.Hash) ([]TodoDesc, error) {
-	cob, err := repo.CommitObject(hash)
-	if err != nil {
-		return nil, err
-	}
+func FindCommitTodos(cob object.Commit) ([]TodoDesc, error) {
 	var todos []TodoDesc
 	fIter, err := cob.Files()
 	if err != nil {

@@ -1,0 +1,34 @@
+body {
+    font-family: Helvetica;
+    line-height: 1.5;
+}
+
+#gw-todo-list {
+    /*max-width: 800px;*/
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.gw-todo {
+    padding: 12px;
+    border-top: 1px solid rgb(236, 236, 239);
+    box-sizing: border-box;
+}
+
+.gw-todo-title {
+    font-size: 16px;
+    font-weight: bold;
+    text-decoration: none;
+    color: black;
+}
+
+.gw-todo-data {
+    width: inherit;
+    font-size: 12px;
+    color: #737278;
+}
+
+.gw-todo-id {
+    font-family: monospace;
+}

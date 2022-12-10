@@ -1,0 +1,16 @@
+{{define "contents"}}
+<div id="gw-todo-list">
+    {{range .Todos}}
+    <div class="gw-todo">
+        <a href="/todo/{{.FileName}}?line={{.Line}}" class="gw-todo-title">{{.Title}}</a>
+        <div class="gw-todo-data">
+            <span class="gw-todo-id">{{.ID}}</span>
+            <span class="gw-todo-dot">&middot;</span>
+            <span class="gw-todo-info-created">Created </span> 
+            <span class="gw-todo-timestamp">{{.Timestamp}}</span> 
+            <span class="gw-todo-info-by"> by </span> 
+            <span class="gw-todo-author">{{.Author}}</span>
+        </div>
+    </div>{{end}}
+</div>
+{{end}}
