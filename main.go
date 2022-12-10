@@ -6,7 +6,6 @@ import (
 	"html/template"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	texttemplate "text/template"
@@ -24,7 +23,7 @@ var defaultAdocTemplate string
 
 type DrawableTodo struct {
 	EvenRow bool
-	T       Todo
+	T       TodoDesc
 }
 
 type TodoInfo struct {
@@ -98,13 +97,13 @@ func main() {
 	flag.Parse()
 
 	var (
-		dir string
-		err error
+		repoPath string
+		err      error
 	)
 	if len(flag.Args()) > 0 {
-		dir, err = filepath.Abs(flag.Arg(0))
+		repoPath, err = filepath.Abs(flag.Arg(0))
 	} else {
-		dir, err = filepath.Abs(".")
+		repoPath, err = filepath.Abs(".")
 	}
 	if err != nil {
 		fmt.Println("Failed to find repo:", err)
@@ -114,7 +113,7 @@ func main() {
 	if temp == nil {
 		return
 	}
-	repoPath := path.Base(dir)
+	fmt.Println(repoPath)
 	repo, err := git.PlainOpen(repoPath)
 	if err != nil {
 		fmt.Println("Failed to open repo:", err)
@@ -130,7 +129,17 @@ func main() {
 		fmt.Println("Failed to list files:", err)
 		return
 	}
-
+	for _, f := range files {
+		fmt.Println(f.Name, f.Size)
+	}
+	todos, err := FindCommitTodos(repo, ref.Hash())
+	if err != nil {
+		fmt.Println("Failed to find todos:", err)
+		return
+	}
+	for _, t := range todos {
+		fmt.Printf("[%v] %v\n", t.ID, t.Title)
+	}
 	// Legacy stuff that may be relevant (for inspiration) still
 	// todos, err := FindRepoTodos(dir)
 	// if err != nil {
@@ -157,8 +166,10 @@ func main() {
 	// }
 	// temp.Execute(os.Stdout, TodoInfo{
 	// 	Title: repoName,
-	// 	// TODO [gen_group_by_filename]: Group todos by filename (again) - let this be a bool flag.
+	// 	// TODO [gen_group_by_filename]: Group todos by filename (again) - let this be a bool flag???
 	// 	// For now it's deactivated in order to easily support sorting on fields.
+	// 	// Update: Don't think this is relevant for gitwood. It will take inspiration from Github / Gitlab
+	// 	// issues, where filenames are not relevant at all.
 	// 	//FileTodos: make(map[string][]gen.TodoDesc),
 	// 	Show:  fieldsShown,
 	// 	Todos: drawableTodos,

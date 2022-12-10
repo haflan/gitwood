@@ -29,11 +29,14 @@ var (
 
 type TodoDesc struct {
 	// FileName path relative to some root
-	FileName  string
-	Line      int
-	ID        string
-	Title     string
-	Details   string
+	FileName string
+	Line     int
+	ID       string
+	Title    string
+	Details  string
+	// *Blame* can be used for Author and Timestamp:
+	// https://github.com/go-git/go-git/blob/master/blame.go#L105
+	Author    string
 	Timestamp string
 	// todo.txt fields
 	Priority string
