@@ -1,0 +1,15 @@
+== {{.Title}} TODO
+
+|===
+|{{if .Show.Reference }} Reference |{{end}}{{if .Show.Timestamp }} Timestamp |{{end}}{{if .Show.Description }} Description |{{end}}{{if .Show.FileName }} File |{{end}}{{if .Show.Line }} Line |{{end}}{{if .Show.Priority }} Priority{{end}}
+
+{{range .Todos}}
+{{if $.Show.Reference}}| {{.T.Reference}}
+{{end}}{{if $.Show.Timestamp}}| {{.T.Timestamp}}
+{{end}}{{if $.Show.Description}}| {{.T.Description}}
+{{end}}{{if $.Show.FileName}}| {{.T.FileName}}
+{{end}}{{if $.Show.Line}}| {{.T.Line}}
+{{end}}{{if $.Show.Priority}}| {{.T.Priority}}
+{{end}}{{end}}
+
+|===

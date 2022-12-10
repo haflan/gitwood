@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}} TODOs</title>
+    <style>
+        body {
+            font-family: monospace;
+        }
+        .even-table-row {
+            background-color: #ddefff;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{.Title}} TODOs</h1>
+    <table>
+        <tr>
+            {{if .Show.Reference}}<th>Reference</th>{{end}}
+            {{if .Show.Timestamp}}<th>Timestamp</th>{{end}}
+            {{if .Show.Description}}<th>Description</th>{{end}}
+            {{if .Show.FileName}}<th>File</th>{{end}}
+            {{if .Show.Line}}<th>Line</th>{{end}}
+            {{if .Show.Priority}}<th>Priority</th>{{end}}
+        </tr>{{range .Todos}}
+        <tr class="{{if .EvenRow}}even-table-row{{else}}odd-table-row{{end}}">
+            {{if $.Show.Reference}}<td>{{.T.Reference}}</td>{{end}}
+            {{if $.Show.Timestamp}}<td>{{.T.Timestamp}}</td>{{end}}
+            {{if $.Show.Description}}<td>{{.T.Description}}</td>{{end}}
+            {{if $.Show.FileName}}<td>{{.T.FileName}}</td>{{end}}
+            {{if $.Show.Line}}<td>{{.T.Line}}</td>{{end}}
+            {{if $.Show.Priority}}<td>{{.T.Priority}}</td>{{end}}
+        </tr>{{end}}
+    </table>
+</body>
+</html>
