@@ -11,6 +11,15 @@ type ErrorPageData struct {
 	Message string
 }
 
+func (pd PageContext) errorRequest(w http.ResponseWriter, message string) {
+	w.WriteHeader(http.StatusBadRequest)
+	errorTmpl.Execute(w, ErrorPageData{
+		PageContext: pd,
+		Code:        http.StatusBadRequest,
+		Message:     message,
+	})
+}
+
 func (pd PageContext) errorPageNotFound(w http.ResponseWriter, message string) {
 	w.WriteHeader(http.StatusNotFound)
 	errorTmpl.Execute(w, ErrorPageData{

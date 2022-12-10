@@ -7,7 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 var (
@@ -22,14 +23,20 @@ type Link struct {
 	Href string
 }
 
-type PageContext struct {
+type PageData struct {
 	Title       string
 	StyleLink   string
 	RootPath    string
 	Index       []Link
 	Breadcrumbs []Link
-	// Commit can be the hash of a commit, or a ref
-	Commit string
+	// FriendlyCommit is a branch name, tag or the first 8 characters of the commit hash
+	FriendlyCommit string
+}
+
+type PageContext struct {
+	PageData
+	Commit *object.Commit
+	Repo   *git.Repository
 }
 
 type TodoPageData struct {
@@ -51,17 +58,33 @@ func serve() {
 		if len(projectOperation) > 1 && projectOperation[1] != "" {
 			operation = projectOperation[1]
 		}
-
 		pc := PageContext{
-			Title:       strings.TrimPrefix(projectPath, "/") + " - todo",
-			StyleLink:   "/style.css",
-			RootPath:    SettingServerPathPrefix,
-			Breadcrumbs: makeBreadcrumbs(projectPath),
-			Commit:      r.URL.Query().Get("commit"),
+			PageData: PageData{
+				Title:       strings.TrimPrefix(projectPath, "/") + " - " + operation,
+				StyleLink:   "/style.css",
+				RootPath:    SettingServerPathPrefix,
+				Breadcrumbs: makeBreadcrumbs(projectPath),
+			},
+		}
+		pc.requireRepoOrList(w, projectPath)
+		if pc.Repo == nil {
+			return
+		}
+
+		// Operations that don't depend on commit
+		switch operation {
+		case "tags":
+			fallthrough
+		case "branches":
+			pc.errorPageNotFound(w, operation+" not implemented yet")
+		}
+		pc.requireCommit(w, r)
+		if pc.Commit == nil {
+			return
 		}
 		switch operation {
 		case "todo":
-			pc.todoHandler(w, r, projectPath)
+			pc.todoHandler(w, r)
 		case "files":
 			fallthrough
 		case "log":
@@ -88,42 +111,16 @@ func staticFile(w http.ResponseWriter, r *http.Request, rpath string) bool {
 	return true
 }
 
-func (pc PageContext) todoHandler(w http.ResponseWriter, r *http.Request, projectPath string) {
+func (pc PageContext) todoHandler(w http.ResponseWriter, r *http.Request) {
 	filename := r.URL.Query().Get("file")
 	if filename == "" {
-		pc.todoListHandler(w, r, projectPath, pc.Commit)
+		pc.todoListHandler(w, r)
 		return
 	}
 }
 
-func (pc *PageContext) todoListHandler(w http.ResponseWriter, r *http.Request, projectPath, commit string) {
-	// TODO [generalize_find_repo_commit]: 2022-12-10T22:33Z Generalize functionality for loading repo and commit.
-	// This is relevant for most pages. Maybe make it part of the page context?
-	// Only problem with that is that it's probably not very idiomatic to expose implementation details
-	// to the templates, but meh for now.
-	repo := pc.mustOpenGitRepo(w, projectPath)
-	if repo == nil {
-		return
-	}
-	if strings.HasPrefix(commit, "refs/heads/") {
-		ref, err := repo.Reference(plumbing.ReferenceName(commit), true)
-		if err != nil {
-			pc.errorPageServer(w, "could not find the given commit", err)
-			return
-		}
-		commit = ref.Hash().String()
-		// Prettify commit for the page:
-		pc.Commit = strings.TrimPrefix(pc.Commit, "refs/heads/")
-	} else {
-		pc.Commit = pc.Commit[:8]
-	}
-	hash, err := commitOrHead(repo, commit)
-	if err != nil {
-		pc.errorPageServer(w, "failed to fetch HEAD", err)
-		return
-	}
-
-	todos, err := FindCommitTodos(*hash)
+func (pc *PageContext) todoListHandler(w http.ResponseWriter, r *http.Request) {
+	todos, err := FindCommitTodos(*pc.Commit)
 	if err != nil {
 		pc.errorPageServer(w, "failed to find todos", err)
 		return

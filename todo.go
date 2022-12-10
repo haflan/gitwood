@@ -13,7 +13,6 @@ import (
 )
 
 var (
-	tsFormat = time.RFC3339
 	// The timestamp of a commit can be specified by the creator, but will be read from logs otherwise.
 	reTimestamp = `((?P<Timestamp>\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}Z)?)\s+)?`
 	rePriority  = `(?P<Priority>\([A-Z]\)\s+)?`

@@ -16,7 +16,7 @@
     {{range .Breadcrumbs}}
         /<a href="{{.Href}}">{{.Text}}</a>
     {{end}}
-    {{if .Commit}}<span id="bc-commit">(@{{.Commit}})</span>{{end}}
+    {{if .Commit}}<span id="bc-commit">@{{.FriendlyCommit}}</span>{{end}}
     </header>
     {{block "contents" .}}gitwood{{end}}
 </body>

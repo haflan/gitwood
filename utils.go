@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"path"
 	"strings"
@@ -10,45 +11,87 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
-func (pd PageContext) mustOpenGitRepo(w http.ResponseWriter, projectPath string) *git.Repository {
-	repo, err := git.PlainOpen(path.Join(SettingRootDir, projectPath))
-	if err != nil {
-		if errors.Is(err, git.ErrRepositoryNotExists) {
-			projectPath = strings.TrimPrefix(projectPath, "/")
-			message := "repository " + projectPath + " does not exist"
-			if projectPath == "" {
-				message = "no git repository in the server root directory"
-			}
-			pd.errorPageNotFound(w, message)
-		} else {
-			pd.errorPageServer(w, "unknown server error", err)
+func (pc *PageContext) listReposWithPrefix(pathPrefix string) {
+	// TODO [list_repos_by_prefix]: List all repos given a certain prefix
+	for _, repo := range SettingRegisteredRepos {
+		if strings.HasPrefix(repo, pathPrefix) {
+			log.Println("Matching:", repo)
 		}
-		return nil
 	}
-	return repo
 }
 
-// commitOrHead tries to load the commit with the given hash, if any.
-// If no hash is given, HEAD is loaded.
-func commitOrHead(repo *git.Repository, commitHash string) (*object.Commit, error) {
-	var hash plumbing.Hash
-	if commitHash != "" {
-		hash = plumbing.NewHash(commitHash)
-	} else {
-		ref, err := repo.Head()
-		if err != nil {
-			return nil, err
-		}
-		hash = ref.Hash()
+// requireRepoOrList tries to extract a git repo given by repoPath.
+// If no repo exists at the path, it looks for repos with the path as prefix.
+func (pc *PageContext) requireRepoOrList(w http.ResponseWriter, repoPath string) {
+	var err error
+	dirPrefix := path.Join(SettingRootDir, repoPath)
+	pc.Repo, err = git.PlainOpen(dirPrefix)
+	// Any request to a non-repo should try to load the path as a directory
+	if errors.Is(err, git.ErrRepositoryNotExists) {
+		pc.listReposWithPrefix(dirPrefix)
+	} else if err != nil {
+		pc.errorPageServer(w, "unexpected error when trying to open repository", err)
 	}
-	cob, err := repo.CommitObject(hash)
+}
+
+func (pc *PageContext) mustGetRef(w http.ResponseWriter, refName string) plumbing.Hash {
+	pi := strings.LastIndex(refName, "/")
+	if pi == len(refName)-1 {
+		pc.errorRequest(w, "invalid ref: "+refName)
+		return plumbing.ZeroHash
+	}
+	prefix := refName[:pi+1]
+	ref, err := pc.Repo.Reference(plumbing.ReferenceName(refName), true)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, plumbing.ErrReferenceNotFound) {
+			pc.errorPageNotFound(w, "could not find the given ref: "+refName)
+		} else {
+			pc.errorPageServer(w, "failed to find the given ref: "+refName, err)
+		}
+		return plumbing.ZeroHash
 	}
-	return cob, nil
+	pc.FriendlyCommit = strings.TrimPrefix(refName, prefix)
+	return ref.Hash()
+}
+
+// ExtractCommit tries to load the commit with the given hash, if any.
+// If no hash is given, HEAD is loaded.
+func (pc *PageContext) requireCommit(w http.ResponseWriter, r *http.Request) {
+	commit := r.URL.Query().Get("commit")
+	var hash plumbing.Hash
+	var err error
+	switch {
+	case strings.HasPrefix(commit, "refs/"):
+		hash = pc.mustGetRef(w, commit)
+	case commit == "":
+		var ref *plumbing.Reference
+		ref, err = pc.Repo.Head()
+		if err != nil {
+			pc.errorPageServer(w, "failed to find HEAD for repository", err)
+			return
+		}
+		pc.FriendlyCommit = ref.Name().Short()
+		hash = ref.Hash()
+	default:
+		hash = plumbing.NewHash(commit)
+	}
+	if hash.IsZero() {
+		return
+	}
+	if pc.FriendlyCommit == "" {
+		pc.FriendlyCommit = commit[:8]
+	}
+	pc.Commit, err = pc.Repo.CommitObject(hash)
+	if err != nil {
+		if errors.Is(err, plumbing.ErrObjectNotFound) {
+			pc.errorPageNotFound(w, "no such commit: "+hash.String())
+		} else {
+			pc.errorPageServer(w, "failed to fetch commit with hash: "+hash.String(), err)
+		}
+		pc.Commit = nil // Just to be sure
+	}
 }
 
 const (
@@ -75,7 +118,7 @@ func prettyTime(ts time.Time) string {
 		num = int(since / sinceDay)
 		unit = "day"
 	case since > sinceHours:
-		unit = "hours"
+		unit = "hour"
 		num = int(since / sinceHours)
 	case since > sinceMinute:
 		unit = "minute"
