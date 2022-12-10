@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-git/go-git/v5"
@@ -65,4 +66,19 @@ func prettyTime(ts time.Time) string {
 		unit += "s"
 	}
 	return fmt.Sprintf("%v %v ago", num, unit)
+}
+
+func makeBreadcrumbs(path string) []Link {
+	var links []Link
+	parts := strings.Split(strings.TrimSuffix(strings.TrimPrefix(path, "/"), "/"), "/")
+	for i, part := range parts {
+		l := Link{
+			Text: part,
+		}
+		if i != len(parts)-1 {
+			l.Href = "/" + SettingServerPathPrefix + strings.Join(parts[:i+1], "/")
+		}
+		links = append(links, l)
+	}
+	return links
 }

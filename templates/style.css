@@ -1,13 +1,25 @@
 body {
     font-family: Helvetica;
     line-height: 1.5;
-}
-
-#gw-todo-list {
-    /*max-width: 800px;*/
     width: 90%;
     margin-left: auto;
     margin-right: auto;
+}
+
+a {
+    text-decoration: none;
+    color: black;
+}
+
+header {
+    margin-bottom: 0.5em;
+}
+
+#bc-home {
+    color: yellowgreen;
+    border: 1px solid yellowgreen;
+    border-radius: 15px;
+    padding: 3px;
 }
 
 .gw-todo {
@@ -19,8 +31,6 @@ body {
 .gw-todo-title {
     font-size: 16px;
     font-weight: bold;
-    text-decoration: none;
-    color: black;
 }
 
 .gw-todo-data {

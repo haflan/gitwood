@@ -14,9 +14,17 @@ var (
 	todoTmpl = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/todo.tmpl.html"))
 )
 
+type Link struct {
+	Text string
+	Href string
+}
+
 type PageData struct {
-	Title     string
-	StyleLink string
+	Title       string
+	StyleLink   string
+	RootPath    string
+	Index       []Link
+	Breadcrumbs []Link
 }
 
 type TodoPageData struct {
@@ -94,8 +102,10 @@ func todoListHandler(w http.ResponseWriter, r *http.Request, projectPath, commit
 	//FindCommitTodos()
 	data := TodoPageData{
 		PageData: PageData{
-			Title:     "test",
-			StyleLink: "/style.css",
+			Title:       strings.TrimPrefix(projectPath, "/") + " - todo",
+			StyleLink:   "/style.css",
+			RootPath:    SettingServerPathPrefix,
+			Breadcrumbs: makeBreadcrumbs(projectPath),
 		},
 		Todos: todos,
 	}

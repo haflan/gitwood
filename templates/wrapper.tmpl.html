@@ -9,5 +9,13 @@
   <link rel="stylesheet" href="{{.StyleLink}}">
 </head>
 <body>
+    <header>
+    {{range .Index}}
+    {{end}}
+    <a id="bc-home" href="/{{.RootPath}}">gw</a>
+    {{range .Breadcrumbs}}
+        /<a href="{{.Href}}">{{.Text}}</a>
+    {{end}}
+    </header>
     {{block "contents" .}}gitwood{{end}}
 </body>
