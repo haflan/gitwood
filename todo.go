@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"sort"
@@ -10,10 +11,12 @@ import (
 )
 
 var (
-	reDate      = `(?P<Timestamp>\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?\s+)?`
+	// The timestamp of a commit can be specified by the creator, but will be read from logs otherwise.
+	reTimestamp = `(?P<Timestamp>\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?\s+)?`
 	rePriority  = `(?P<Priority>\([A-Z]\)\s+)?`
-	reReference = `(\[(?P<ID>([a-z]|_)+)\]\s*)?`
-	treBase     = fmt.Sprintf(`TODO\s*%v:\s*%v%v(?P<Title>.+)`, reReference, rePriority, reDate)
+	// Todo ID is *not* optional, because low-effort TODOs should be ignored ;)
+	reID    = `(\[(?P<ID>([a-z]|_)+)\]\s*)`
+	treBase = fmt.Sprintf(`TODO\s*%v:\s*%v%v(?P<Title>.+)`, reID, rePriority, reTimestamp)
 	// Todo Regexps
 	treSimple      = regexp.MustCompile(treBase)
 	treDoubleSlash = regexp.MustCompile(`\/\/\s*` + treBase)
@@ -99,10 +102,12 @@ func getTodoExtractor(filename string) todoExtractor {
 	}
 }
 
+var ErrFileIsBinary = errors.New("the file is binary")
+
 func getLines(f *object.File) ([]string, error) {
 	bin, err := f.IsBinary()
 	if bin {
-		return nil, fmt.Errorf("file %v is binary", f.Name)
+		return nil, fmt.Errorf("%v: %w", f.Name, ErrFileIsBinary)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("file to check if %v is binary: %w", f.Name, err)
@@ -113,6 +118,10 @@ func getLines(f *object.File) ([]string, error) {
 // FindFileTodos finds all the todos in the given git file, assuming it's not a binary type.
 func FindFileTodos(f *object.File) ([]TodoDesc, error) {
 	lines, err := getLines(f)
+	if errors.Is(err, ErrFileIsBinary) {
+		// Binary files should simply be ignored, of course
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}

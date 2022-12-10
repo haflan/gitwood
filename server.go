@@ -83,12 +83,12 @@ func todoListHandler(w http.ResponseWriter, r *http.Request, projectPath, commit
 	}
 	hash, err := commitOrHead(repo, commitHash)
 	if err != nil {
-		errorPageServer(w, "failed to fetch HEAD")
+		errorPageServer(w, "failed to fetch HEAD", err)
 		return
 	}
 	todos, err := FindCommitTodos(*hash)
 	if err != nil {
-		errorPageServer(w, "failed to find todos")
+		errorPageServer(w, "failed to find todos", err)
 		return
 	}
 	//FindCommitTodos()

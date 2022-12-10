@@ -2,8 +2,6 @@ package main
 
 import (
 	_ "embed"
-	"fmt"
-	"os"
 	"time"
 
 	git "github.com/go-git/go-git/v5"
@@ -11,13 +9,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
-
-func must(err error) {
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-}
 
 type LogEntry struct {
 	Hash      string

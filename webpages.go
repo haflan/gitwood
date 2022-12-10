@@ -21,7 +21,7 @@ func mustOpenGitRepo(w http.ResponseWriter, projectPath string) *git.Repository 
 			}
 			errorPageNotFound(w, message)
 		} else {
-			errorPageServer(w, "unknown server error")
+			errorPageServer(w, "unknown server error", err)
 		}
 		return nil
 	}
@@ -34,8 +34,8 @@ func errorPageNotFound(w http.ResponseWriter, message string) {
 	w.Write([]byte(message))
 }
 
-func errorPageServer(w http.ResponseWriter, message string) {
-	log.Println(message)
+func errorPageServer(w http.ResponseWriter, message string, err error) {
+	log.Println("internal server error:", err)
 	w.WriteHeader(http.StatusInternalServerError)
 	// error_pages
 	w.Write([]byte(message))
