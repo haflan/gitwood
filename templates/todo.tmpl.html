@@ -5,11 +5,17 @@
         <a href="/todo/{{.FileName}}?line={{.Line}}" class="gw-todo-title">{{.Title}}</a>
         <div class="gw-todo-data">
             <span class="gw-todo-id">{{.ID}}</span>
+            {{ if or .Author .TimeAgoString}}
             <span class="gw-todo-dot">&middot;</span>
             <span class="gw-todo-info-created">Created </span> 
-            <span class="gw-todo-timestamp">{{.Timestamp}}</span> 
+            {{ if .Timestamp}}
+            <span class="gw-todo-timestamp" title="{{.Timestamp.Format "2006-01-02 15:04 UTC"}}">{{.TimeAgoString}}</span> 
+            {{ end }}
+            {{ if .Author}}
             <span class="gw-todo-info-by"> by </span> 
             <span class="gw-todo-author">{{.Author}}</span>
+            {{end}}
+            {{end}}
         </div>
     </div>{{end}}
 </div>

@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -24,4 +27,42 @@ func commitOrHead(repo *git.Repository, commitHash string) (*object.Commit, erro
 		return nil, err
 	}
 	return cob, nil
+}
+
+const (
+	sinceMinute = time.Minute
+	sinceHours  = time.Hour
+	sinceDay    = 24 * sinceHours
+	// Close enough
+	sinceMonth = 31 * sinceDay
+	sinceYear  = 365 * sinceDay
+)
+
+func prettyTime(ts time.Time) string {
+	since := time.Since(ts)
+	var num int
+	var unit string
+	switch {
+	case since > sinceYear:
+		num = int(since / sinceYear)
+		unit = "year"
+	case since > sinceMonth:
+		num = int(since / sinceMonth)
+		unit = "month"
+	case since > sinceDay:
+		num = int(since / sinceDay)
+		unit = "day"
+	case since > sinceHours:
+		unit = "hours"
+		num = int(since / sinceHours)
+	case since > sinceMinute:
+		unit = "minute"
+		num = int(since / sinceMinute)
+	default:
+		return "just now"
+	}
+	if num >= 2 {
+		unit += "s"
+	}
+	return fmt.Sprintf("%v %v ago", num, unit)
 }

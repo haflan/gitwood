@@ -6,13 +6,16 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
+	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 var (
+	tsFormat = time.RFC3339
 	// The timestamp of a commit can be specified by the creator, but will be read from logs otherwise.
-	reTimestamp = `(?P<Timestamp>\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?\s+)?`
+	reTimestamp = `((?P<Timestamp>\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}Z)?)\s+)?`
 	rePriority  = `(?P<Priority>\([A-Z]\)\s+)?`
 	// Todo ID is *not* optional, because low-effort TODOs should be ignored ;)
 	reID    = `(\[(?P<ID>([a-z]|_)+)\]\s*)`
@@ -37,8 +40,9 @@ type TodoDesc struct {
 	Details  string
 	// *Blame* can be used for Author and Timestamp:
 	// https://github.com/go-git/go-git/blob/master/blame.go#L105
-	Author    string
-	Timestamp string
+	Author        string
+	Timestamp     time.Time
+	TimeAgoString string // formatted timestamp
 	// todo.txt fields
 	Priority string
 }
@@ -56,22 +60,37 @@ type todoExtractor struct {
 	tdi      int
 }
 
-func (tex todoExtractor) Extract(lineNum int, line string) *TodoDesc {
-	match := tex.rex.FindStringSubmatch(line)
+func (tex todoExtractor) Extract(lineNum int, line *git.Line) *TodoDesc {
+	if line == nil {
+		return nil
+	}
+	match := tex.rex.FindStringSubmatch(line.Text)
 	if len(match) == 0 {
 		return nil
 	}
-	return &TodoDesc{
-		FileName:  tex.filename,
-		Line:      lineNum,
-		ID:        string(match[tex.tii]),
-		Title:     string(match[tex.tdi]),
-		Priority:  string(match[tex.tpi]),
-		Timestamp: string(match[tex.tti]),
+	td := &TodoDesc{
+		Author:   line.Author,
+		FileName: tex.filename,
+		Line:     lineNum,
+		ID:       match[tex.tii],
+		Title:    match[tex.tdi],
+		Priority: match[tex.tpi],
 	}
+	td.Timestamp, _ = time.Parse("2006-01-02T15:04Z", string(match[tex.tti]))
+	// NOTE [use_git_blame_when_fixed]: 2022-12-10T21:45 When git.Blame() is fixed, timestamp is available for all Todos
+	// if ts.IsZero() {
+	// 	ts = line.Date
+	// }
+	if !td.Timestamp.IsZero() {
+		td.TimeAgoString = prettyTime(td.Timestamp)
+	}
+	return td
 }
 
-func (tex todoExtractor) ExtractFull(lineNum int, lines []string) *TodoDesc {
+func (tex todoExtractor) ExtractFull(lineNum int, lines []*git.Line) *TodoDesc {
+	if lineNum >= len(lines) {
+		return nil
+	}
 	todo := tex.Extract(lineNum, lines[lineNum])
 	lineNum++
 	// TODO [todo_extractor_full]: Extract details from subsequent Todo lines
@@ -104,7 +123,7 @@ func getTodoExtractor(filename string) todoExtractor {
 
 var ErrFileIsBinary = errors.New("the file is binary")
 
-func getLines(f *object.File) ([]string, error) {
+func getLines(c *object.Commit, f *object.File) ([]*git.Line, error) {
 	bin, err := f.IsBinary()
 	if bin {
 		return nil, fmt.Errorf("%v: %w", f.Name, ErrFileIsBinary)
@@ -112,12 +131,27 @@ func getLines(f *object.File) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("file to check if %v is binary: %w", f.Name, err)
 	}
-	return f.Lines()
+	lines, err := f.Lines()
+	if err != nil {
+		return nil, err
+	}
+	// Workaround needed until go-git fixes its blame bugs
+	glines := make([]*git.Line, len(lines))
+	for i, line := range lines {
+		glines[i] = &git.Line{Text: line}
+	}
+	// TODO [use_git_blame_when_fixed]: 2022-12-10T20:45Z Use git.Blame instead of the temporary workaround
+	//br, err := git.Blame(c, f.Name)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//return br.Lines, nil
+	return glines, nil
 }
 
 // FindFileTodos finds all the todos in the given git file, assuming it's not a binary type.
-func FindFileTodos(f *object.File) ([]TodoDesc, error) {
-	lines, err := getLines(f)
+func FindFileTodos(c *object.Commit, f *object.File) ([]TodoDesc, error) {
+	lines, err := getLines(c, f)
 	if errors.Is(err, ErrFileIsBinary) {
 		// Binary files should simply be ignored, of course
 		return nil, nil
@@ -138,9 +172,9 @@ func FindFileTodos(f *object.File) ([]TodoDesc, error) {
 
 // ReadFullTodo tries to read the full todo from the given git file and line number,
 // including details from subsequent lines.
-func ReadFullTodo(f *object.File, lineNum int) (*TodoDesc, error) {
+func ReadFullTodo(c *object.Commit, f *object.File, lineNum int) (*TodoDesc, error) {
 	tex := getTodoExtractor(f.Name)
-	lines, err := getLines(f)
+	lines, err := getLines(c, f)
 	if err != nil {
 		return nil, err
 	}
@@ -151,14 +185,14 @@ func ReadFullTodo(f *object.File, lineNum int) (*TodoDesc, error) {
 	return todo, nil
 }
 
-func FindCommitTodos(cob object.Commit) ([]TodoDesc, error) {
+func FindCommitTodos(c object.Commit) ([]TodoDesc, error) {
 	var todos []TodoDesc
-	fIter, err := cob.Files()
+	fIter, err := c.Files()
 	if err != nil {
 		return nil, err
 	}
 	err = fIter.ForEach(func(f *object.File) error {
-		newTodos, err := FindFileTodos(f)
+		newTodos, err := FindFileTodos(&c, f)
 		if err != nil {
 			return err
 		}
@@ -260,17 +294,10 @@ func todoRefLess(a, b TodoDesc, reverse bool) bool {
 	return ssel(a.ID, b.ID, reverse)
 }
 func todoTsLess(a, b TodoDesc, reverse bool) bool {
-	return a.Timestamp < b.Timestamp
+	return a.Timestamp.Before(b.Timestamp)
 }
 func todoAllLess(a, b TodoDesc, reverse bool) bool {
 	return false
-}
-func todoLineLess(a, b TodoDesc, reverse bool) bool {
-	less := a.Line < b.Line
-	if reverse {
-		return !less
-	}
-	return less
 }
 
 func Sort(todos []TodoDesc, fields []string) {
@@ -305,47 +332,4 @@ func Sort(todos []TodoDesc, fields []string) {
 			return sortFunc(todos[i], todos[j], reverse)
 		})
 	}
-	return
-}
-
-func Filter(todos []TodoDesc, fields []string) []TodoDesc {
-	if len(fields) == 0 || (len(fields) == 1 && fields[0] == "") {
-		return todos
-	}
-	fReq := struct {
-		Reference   bool
-		Description bool
-		Priority    bool
-		Timestamp   bool
-	}{}
-	for _, f := range fields {
-		switch f {
-		case "desc":
-			fReq.Description = true
-		case "pri":
-			fReq.Priority = true
-		case "ref":
-			fReq.Reference = true
-		case "ts":
-			fReq.Timestamp = true
-		}
-	}
-	n := 0
-	for _, todo := range todos {
-		if fReq.Description && todo.Title == "" {
-			continue
-		}
-		if fReq.Priority && todo.Priority == "" {
-			continue
-		}
-		if fReq.Reference && todo.ID == "" {
-			continue
-		}
-		if fReq.Timestamp && todo.Timestamp == "" {
-			continue
-		}
-		todos[n] = todo
-		n++
-	}
-	return todos[:n]
 }
