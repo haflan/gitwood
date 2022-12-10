@@ -1,7 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
+	"path"
 	"strings"
 	"time"
 
@@ -9,6 +12,24 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
+
+func (pd PageContext) mustOpenGitRepo(w http.ResponseWriter, projectPath string) *git.Repository {
+	repo, err := git.PlainOpen(path.Join(SettingRootDir, projectPath))
+	if err != nil {
+		if errors.Is(err, git.ErrRepositoryNotExists) {
+			projectPath = strings.TrimPrefix(projectPath, "/")
+			message := "repository " + projectPath + " does not exist"
+			if projectPath == "" {
+				message = "no git repository in the server root directory"
+			}
+			pd.errorPageNotFound(w, message)
+		} else {
+			pd.errorPageServer(w, "unknown server error", err)
+		}
+		return nil
+	}
+	return repo
+}
 
 // commitOrHead tries to load the commit with the given hash, if any.
 // If no hash is given, HEAD is loaded.

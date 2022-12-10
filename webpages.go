@@ -1,42 +1,31 @@
 package main
 
 import (
-	"errors"
 	"log"
 	"net/http"
-	"path"
-	"strings"
-
-	"github.com/go-git/go-git/v5"
 )
 
-func mustOpenGitRepo(w http.ResponseWriter, projectPath string) *git.Repository {
-	repo, err := git.PlainOpen(path.Join(SettingRootDir, projectPath))
-	if err != nil {
-		if errors.Is(err, git.ErrRepositoryNotExists) {
-			projectPath = strings.TrimPrefix(projectPath, "/")
-			message := "repository " + projectPath + " does not exist"
-			if projectPath == "" {
-				message = "no git repository in the server root directory"
-			}
-			errorPageNotFound(w, message)
-		} else {
-			errorPageServer(w, "unknown server error", err)
-		}
-		return nil
-	}
-	return repo
+type ErrorPageData struct {
+	PageContext
+	Code    int
+	Message string
 }
 
-func errorPageNotFound(w http.ResponseWriter, message string) {
+func (pd PageContext) errorPageNotFound(w http.ResponseWriter, message string) {
 	w.WriteHeader(http.StatusNotFound)
-	// TODO [error_pages]: Create HTTP error pages that match the style of other pages
-	w.Write([]byte(message))
+	errorTmpl.Execute(w, ErrorPageData{
+		PageContext: pd,
+		Code:        http.StatusNotFound,
+		Message:     message,
+	})
 }
 
-func errorPageServer(w http.ResponseWriter, message string, err error) {
+func (pd PageContext) errorPageServer(w http.ResponseWriter, message string, err error) {
 	log.Println("internal server error:", err)
 	w.WriteHeader(http.StatusInternalServerError)
-	// error_pages
-	w.Write([]byte(message))
+	errorTmpl.Execute(w, ErrorPageData{
+		PageContext: pd,
+		Code:        http.StatusInternalServerError,
+		Message:     message,
+	})
 }

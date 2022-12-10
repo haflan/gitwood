@@ -22,6 +22,11 @@ header {
     padding: 3px;
 }
 
+.gw-error-code {
+    font-weight: bold;
+    font-size: 24px;
+}
+
 .gw-todo {
     padding: 12px;
     border-top: 1px solid rgb(236, 236, 239);
