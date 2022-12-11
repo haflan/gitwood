@@ -15,7 +15,7 @@ import (
 var (
 	// The timestamp of a commit can be specified by the creator, but will be read from logs otherwise.
 	reTimestamp = `((?P<Timestamp>\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}Z)?)\s+)?`
-	rePriority  = `(?P<Priority>\([A-Z]\)\s+)?`
+	rePriority  = `(\((?P<Priority>[A-Z])\)\s+)?`
 	// Todo ID is *not* optional, because low-effort TODOs should be ignored ;)
 	reID    = `(\[(?P<ID>([a-z]|_)+)\]\s*)`
 	treBase = fmt.Sprintf(`TODO\s*%v:\s*%v%v(?P<Title>.+)`, reID, rePriority, reTimestamp)

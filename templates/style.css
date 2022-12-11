@@ -48,6 +48,22 @@ header {
     color: #737278;
 }
 
+.gw-todo-pri {
+    font-weight: bold;
+}
+
+.gw-todo-pri-A {
+    background-color: #faa;
+}
+
+.gw-todo-pri-B {
+    background-color: #ffa;
+}
+
+.gw-todo-pri-C {
+    background-color: #9d9;
+}
+
 .gw-todo-id {
     font-family: monospace;
 }

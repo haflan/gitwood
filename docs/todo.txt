@@ -26,15 +26,6 @@ NOTE [todo_details_page]: Support Markdown for todo details too?
 With [gomarkdown](https://github.com/gomarkdown/markdown) this should be fairly easy,
 but don't spend time on it until the todo page is working fine otherwise.
 
-TODO [show_todo_priority]: (A) feature: Show Todo priority on the todo page.
-The data is already there, so all that's needed is a way to show it.
-Idea: If a priority is defined:
-* Add a `<span class="gw-todo-priority">{{.Priority}}</a>`
-* Give the todo div an addition class, `gw-todo-pri-{{.Priority}}`
-That way it's possible to show the priority both as pure text and for instance with a certain color,
-all depending on the CSS.
-Also, sorting by priority should be made the default, at least until sorting manually is possible.
-
 TODO [support_submodules]: feature: Support submodules, both in requests and autoregistry.
 Mostly relevant for local (non-bare) git repos, not on servers.
 

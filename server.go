@@ -126,8 +126,8 @@ func (pc PageContext) todoHandler(w http.ResponseWriter, r *http.Request) {
 		pc.todoListHandler(w, r)
 		return
 	}
-	// TODO [todo_details]: Make page for single TODO with all of its details.
-	// This should be returned for requests to /-/todo where ?file=<file_name>&line=<line_num> is set.
+	// NOTE [todo_details]: If request contains ?file=<file_name>&line=<line_num>,
+	// find todo details and respond with single todo page.
 }
 
 func (pc *PageContext) todoListHandler(w http.ResponseWriter, r *http.Request) {
@@ -136,7 +136,7 @@ func (pc *PageContext) todoListHandler(w http.ResponseWriter, r *http.Request) {
 		pc.errorPageServer(w, "failed to find todos", err)
 		return
 	}
-	//FindCommitTodos()
+	Sort(todos, []string{"pri", "id"})
 	data := TodoPageData{
 		PageContext: *pc,
 		Todos:       todos,

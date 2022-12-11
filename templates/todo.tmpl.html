@@ -2,9 +2,13 @@
 <div id="gw-todo-list">
     {{if .Todos}}
     {{range .Todos}}
-    <div class="gw-todo">
+    <div class="gw-todo{{if .Priority}} gw-todo-pri-{{.Priority}}{{end}}">
         <a href="/todo/{{.FileName}}?line={{.Line}}" class="gw-todo-title">{{.Title}}</a>
         <div class="gw-todo-data">
+            {{ if .Priority }}
+            <span class="gw-todo-pri">({{.Priority}})</span>
+            <span class="gw-todo-dot">&middot;</span>
+            {{end}}
             <span class="gw-todo-id">{{.ID}}</span>
             {{ if or .Author .TimeAgoString}}
             <span class="gw-todo-dot">&middot;</span>
