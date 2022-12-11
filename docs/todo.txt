@@ -37,3 +37,11 @@ This should search in todo details too, so it kinda depends on caching to avoid 
 
 TODO [file_search]: feature: Free text search for file names.
 Similar to todo_search.
+
+TODO [operation_timeout]: feature: Do heavy operations in the background and wait for a limited time.
+Some operations may search through a large amount of repo files,
+and therefore take more time than the user is willing to wait.
+All such operations should generate cache so that the next attempt won't be as heavy.
+To ensure that the cache is generated, the operation should run in a new go routine,
+and the request handler should wait for a limited time before responding with an info page,
+e.g. "The server needs some more time to find the data [Try again]".
