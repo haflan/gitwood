@@ -1,0 +1,48 @@
+TODO [prefix_breaks_pages]: (D) bug: The site seems broken when a server prefix is defined
+
+TODO [persistent_and_cache]: (C) feature: Persistent mode, with configurable config directory.
+For instance, if a `-p` flag or something (decide details later) is given,
+gitwood should create a directory at $GITWOOD_DATADIR (default: `~/.gitwood`),
+which should include:
+* cache/ : _JSON file containing previously extracted / generated data._
+* repos  : _List of repos that should be served_
+
+NOTE [persistent_and_cache]: Cache filename format can look like this:
+    filename = sha256sum(projectPath + '@' + commitHash + '@' + operationDetails)[:16] + '.json',
+because path, hash and operation (details) fully identifies the data of interest.
+With operationDetails, I mean the name of the operation in case of listings,
+and name + identifier (like filename and line number) for a single resource.
+
+TODO [todo_details_page]: (B) feature: Todo details page.
+In gitwood, a todo for a certain repository is fully identified by these parameters:
+* commit (hash or ref)
+* filename
+* line number
+The todo page handler finds the given file for the given commit and starts reading details from subsequent lines.
+Exactly what subsequent lines are treated as todo details depends on the context.
+Both imp_subseq_line_detection and todo_extractor_full talk more about that.
+
+NOTE [todo_details_page]: Support Markdown for todo details too?
+With [gomarkdown](https://github.com/gomarkdown/markdown) this should be fairly easy,
+but don't spend time on it until the todo page is working fine otherwise.
+
+TODO [show_todo_priority]: (A) feature: Show Todo priority on the todo page.
+The data is already there, so all that's needed is a way to show it.
+Idea: If a priority is defined:
+* Add a `<span class="gw-todo-priority">{{.Priority}}</a>`
+* Give the todo div an addition class, `gw-todo-pri-{{.Priority}}`
+That way it's possible to show the priority both as pure text and for instance with a certain color,
+all depending on the CSS.
+Also, sorting by priority should be made the default, at least until sorting manually is possible.
+
+TODO [support_submodules]: feature: Support submodules, both in requests and autoregistry.
+Mostly relevant for local (non-bare) git repos, not on servers.
+
+TODO [todo_sort_and_filter]: feature: Add inputs for sorting and filtering todo list. 
+
+TODO [todo_search]: feature: Free text search for todos
+This should search in todo details too, so it kinda depends on caching to avoid repeating such a heavy operation.
+[fuzzysearch](https://github.com/lithammer/fuzzysearch) is worth considering.
+
+TODO [file_search]: feature: Free text search for file names.
+Similar to todo_search.
