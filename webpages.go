@@ -11,30 +11,37 @@ type ErrorPageData struct {
 	Message string
 }
 
-func (pd PageContext) errorRequest(w http.ResponseWriter, message string) {
+func logPageTmplErr(page string, err error) {
+	if err == nil {
+		return
+	}
+	log.Println("failed to execute", page, ":", err)
+}
+
+func (pc *PageContext) errorRequest(w http.ResponseWriter, message string) {
 	w.WriteHeader(http.StatusBadRequest)
-	errorTmpl.Execute(w, ErrorPageData{
-		PageContext: pd,
+	logPageTmplErr("err_request", errorTmpl.Execute(w, ErrorPageData{
+		PageContext: *pc,
 		Code:        http.StatusBadRequest,
 		Message:     message,
-	})
+	}))
 }
 
-func (pd PageContext) errorPageNotFound(w http.ResponseWriter, message string) {
+func (pc *PageContext) errorPageNotFound(w http.ResponseWriter, message string) {
 	w.WriteHeader(http.StatusNotFound)
-	errorTmpl.Execute(w, ErrorPageData{
-		PageContext: pd,
+	logPageTmplErr("err_not_found", errorTmpl.Execute(w, ErrorPageData{
+		PageContext: *pc,
 		Code:        http.StatusNotFound,
 		Message:     message,
-	})
+	}))
 }
 
-func (pd PageContext) errorPageServer(w http.ResponseWriter, message string, err error) {
+func (pc *PageContext) errorPageServer(w http.ResponseWriter, message string, err error) {
 	log.Println("internal server error:", err)
 	w.WriteHeader(http.StatusInternalServerError)
-	errorTmpl.Execute(w, ErrorPageData{
-		PageContext: pd,
+	logPageTmplErr("err_server", errorTmpl.Execute(w, ErrorPageData{
+		PageContext: *pc,
 		Code:        http.StatusInternalServerError,
 		Message:     message,
-	})
+	}))
 }

@@ -1,5 +1,6 @@
 {{define "contents"}}
 <div id="gw-todo-list">
+    {{if .Todos}}
     {{range .Todos}}
     <div class="gw-todo">
         <a href="/todo/{{.FileName}}?line={{.Line}}" class="gw-todo-title">{{.Title}}</a>
@@ -17,6 +18,10 @@
             {{end}}
             {{end}}
         </div>
-    </div>{{end}}
+    </div>
+    {{end}}
+    {{else}}
+    <div class="gw-no-todos">Nothing to do here :)</div>
+    {{end}}
 </div>
 {{end}}

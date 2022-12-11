@@ -16,6 +16,7 @@ var (
 	wwwFS     embed.FS
 	todoTmpl  = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/todo.tmpl.html"))
 	errorTmpl = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/error.tmpl.html"))
+	reposTmpl = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/repos.tmpl.html"))
 )
 
 type Link struct {
@@ -31,12 +32,18 @@ type PageData struct {
 	Breadcrumbs []Link
 	// FriendlyCommit is a branch name, tag or the first 8 characters of the commit hash
 	FriendlyCommit string
+	Operation      string
 }
 
 type PageContext struct {
 	PageData
 	Commit *object.Commit
 	Repo   *git.Repository
+}
+
+type RepoPageData struct {
+	PageData
+	Repos []Link
 }
 
 type TodoPageData struct {
@@ -54,17 +61,17 @@ func serve() {
 		projectOperation := strings.Split(rpath, "/-/")
 		projectPath := projectOperation[0]
 		// TODO [use_files_as_default]: When file page is implemented, used that as default project page
-		operation := "todo"
-		if len(projectOperation) > 1 && projectOperation[1] != "" {
-			operation = projectOperation[1]
-		}
 		pc := PageContext{
 			PageData: PageData{
-				Title:       strings.TrimPrefix(projectPath, "/") + " - " + operation,
+				Title:       strings.TrimPrefix(projectPath, "/"),
 				StyleLink:   "/style.css",
 				RootPath:    SettingServerPathPrefix,
 				Breadcrumbs: makeBreadcrumbs(projectPath),
 			},
+		}
+		if len(projectOperation) > 1 && projectOperation[1] != "" {
+			pc.Operation = projectOperation[1]
+			pc.Title += " - " + pc.Operation
 		}
 		pc.requireRepoOrList(w, projectPath)
 		if pc.Repo == nil {
@@ -72,17 +79,19 @@ func serve() {
 		}
 
 		// Operations that don't depend on commit
-		switch operation {
+		switch pc.Operation {
 		case "tags":
 			fallthrough
 		case "branches":
-			pc.errorPageNotFound(w, operation+" not implemented yet")
+			pc.errorPageNotFound(w, pc.Operation+" not implemented yet")
 		}
 		pc.requireCommit(w, r)
 		if pc.Commit == nil {
 			return
 		}
-		switch operation {
+		switch pc.Operation {
+		case "":
+			fallthrough
 		case "todo":
 			pc.todoHandler(w, r)
 		case "files":
@@ -90,7 +99,7 @@ func serve() {
 		case "log":
 			fallthrough
 		default:
-			pc.errorPageNotFound(w, operation+" does not exist")
+			pc.errorPageNotFound(w, pc.Operation+" does not exist")
 		}
 	}))
 }
@@ -117,6 +126,8 @@ func (pc PageContext) todoHandler(w http.ResponseWriter, r *http.Request) {
 		pc.todoListHandler(w, r)
 		return
 	}
+	// TODO [todo_details]: Make page for single TODO with all of its details.
+	// This should be returned for requests to /-/todo where ?file=<file_name>&line=<line_num> is set.
 }
 
 func (pc *PageContext) todoListHandler(w http.ResponseWriter, r *http.Request) {

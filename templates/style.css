@@ -22,12 +22,16 @@ header {
     padding: 3px;
 }
 
+#bc-commit {
+    color: rgb(180, 180, 183);
+}
+
 .gw-error-code {
     font-weight: bold;
     font-size: 24px;
 }
 
-.gw-todo {
+.gw-todo, .gw-repo {
     padding: 12px;
     border-top: 1px solid rgb(236, 236, 239);
     box-sizing: border-box;

@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"path"
 	"strings"
@@ -13,13 +12,24 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
-func (pc *PageContext) listReposWithPrefix(pathPrefix string) {
-	// TODO [list_repos_by_prefix]: List all repos given a certain prefix
-	for _, repo := range SettingRegisteredRepos {
-		if strings.HasPrefix(repo, pathPrefix) {
-			log.Println("Matching:", repo)
+func (pc *PageContext) listReposWithPrefix(w http.ResponseWriter, pathPrefix string) {
+	data := RepoPageData{
+		PageData: pc.PageData,
+		Repos:    []Link{},
+	}
+	for _, repoPath := range SettingRegisteredRepos {
+		if strings.HasPrefix(repoPath, pathPrefix) {
+			data.Repos = append(data.Repos, Link{
+				Text: repoPath,
+				Href: path.Join("/", SettingServerPathPrefix, repoPath),
+			})
 		}
 	}
+	if len(data.Repos) == 0 {
+		pc.errorPageNotFound(w, "no repos matching the path: "+pathPrefix)
+		return
+	}
+	reposTmpl.Execute(w, data)
 }
 
 // requireRepoOrList tries to extract a git repo given by repoPath.
@@ -30,7 +40,7 @@ func (pc *PageContext) requireRepoOrList(w http.ResponseWriter, repoPath string)
 	pc.Repo, err = git.PlainOpen(dirPrefix)
 	// Any request to a non-repo should try to load the path as a directory
 	if errors.Is(err, git.ErrRepositoryNotExists) {
-		pc.listReposWithPrefix(dirPrefix)
+		pc.listReposWithPrefix(w, repoPath)
 	} else if err != nil {
 		pc.errorPageServer(w, "unexpected error when trying to open repository", err)
 	}
@@ -132,15 +142,15 @@ func prettyTime(ts time.Time) string {
 	return fmt.Sprintf("%v %v ago", num, unit)
 }
 
-func makeBreadcrumbs(path string) []Link {
+func makeBreadcrumbs(rpath string) []Link {
 	var links []Link
-	parts := strings.Split(strings.TrimSuffix(strings.TrimPrefix(path, "/"), "/"), "/")
+	parts := strings.Split(strings.TrimSuffix(strings.TrimPrefix(rpath, "/"), "/"), "/")
 	for i, part := range parts {
 		l := Link{
 			Text: part,
 		}
 		if i != len(parts)-1 {
-			l.Href = "/" + SettingServerPathPrefix + strings.Join(parts[:i+1], "/")
+			l.Href = path.Join("/", SettingServerPathPrefix, strings.Join(parts[:i+1], "/"))
 		}
 		links = append(links, l)
 	}

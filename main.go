@@ -2,7 +2,37 @@ package main
 
 import (
 	_ "embed"
+	"io/fs"
+	"log"
+	"path/filepath"
+	"strings"
+
+	"github.com/go-git/go-git/v5"
 )
+
+func init() {
+	// TODO [overwrite_repo_register]: Make it possible to overwrite repo list, with env var or file.
+	// Manually maintained lists, when implemented, should the preferred way to use gitwood.
+	// This WalkDir is just here to make it possible to use gitwood without any config or args.
+	log.Println("no repo register found - searching in", SettingRootDir)
+	err := filepath.WalkDir(SettingRootDir, func(path string, d fs.DirEntry, err error) error {
+		if d.IsDir() && d.Name() == ".git" {
+			_, err := git.PlainOpen(path)
+			path = strings.TrimPrefix(filepath.Dir(path), SettingRootDir)
+			if err == nil {
+				SettingRegisteredRepos = append(SettingRegisteredRepos, path)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		log.Fatal("failed to register git dirs:", err)
+	}
+	if len(SettingRegisteredRepos) == 0 {
+		log.Fatal("no repos registered")
+	}
+	log.Printf("found %v repositories", len(SettingRegisteredRepos))
+}
 
 func main() {
 	serve()

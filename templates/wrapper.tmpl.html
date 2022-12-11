@@ -14,9 +14,9 @@
     {{end}}
     <a id="bc-home" href="/{{.RootPath}}">gw</a>
     {{range .Breadcrumbs}}
-        /<a href="{{.Href}}">{{.Text}}</a>
+        / <a href="{{.Href}}{{if $.Operation}}/-/{{$.Operation}}{{end}}">{{.Text}}</a>
     {{end}}
-    {{if .Commit}}<span id="bc-commit">@{{.FriendlyCommit}}</span>{{end}}
+    {{if .FriendlyCommit}}<span id="bc-commit">@{{.FriendlyCommit}}</span>{{end}}
     </header>
     {{block "contents" .}}gitwood{{end}}
 </body>
