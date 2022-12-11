@@ -20,7 +20,7 @@ In gitwood, a todo for a certain repository is fully identified by these paramet
 * line number
 The todo page handler finds the given file for the given commit and starts reading details from subsequent lines.
 Exactly what subsequent lines are treated as todo details depends on the context.
-Both imp_subseq_line_detection and todo_extractor_full talk more about that.
+imp_subseq_line_detection talks more about that.
 
 NOTE [todo_details_page]: Support Markdown for todo details too?
 With [gomarkdown](https://github.com/gomarkdown/markdown) this should be fairly easy,

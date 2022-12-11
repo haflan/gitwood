@@ -12,7 +12,7 @@ import (
 
 func init() {
 	// TODO [overwrite_repo_register]: Make it possible to overwrite repo list, with env var or file.
-	// Manually maintained lists, when implemented, should the preferred way to use gitwood.
+	// Manually maintained lists, when implemented, should be the preferred way to use gitwood.
 	// This WalkDir is just here to make it possible to use gitwood without any config or args.
 	log.Println("no repo register found - searching in", SettingRootDir)
 	err := filepath.WalkDir(SettingRootDir, func(path string, d fs.DirEntry, err error) error {

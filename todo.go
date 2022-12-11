@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -23,10 +24,16 @@ var (
 	treSimple      = regexp.MustCompile(treBase)
 	treDoubleSlash = regexp.MustCompile(`\/\/\s*` + treBase)
 	treHash        = regexp.MustCompile(`#\s*` + treBase)
-	extRegexps     = map[string]*regexp.Regexp{
+	// imp_subseq_line_detection
+	extRegexps = map[string]*regexp.Regexp{
 		".go":   treDoubleSlash,
 		".adoc": treDoubleSlash,
 		".py":   treHash,
+	}
+	extPrefixes = map[string]string{
+		".go":   "//",
+		".adoc": "//",
+		".py":   "#",
 	}
 )
 
@@ -52,11 +59,34 @@ func (td TodoDesc) String() string {
 
 type todoExtractor struct {
 	filename string
+	prefix   string
 	rex      *regexp.Regexp
 	tii      int
 	tti      int
 	tpi      int
 	tdi      int
+}
+
+func getTodoExtractor(filename string) todoExtractor {
+	var fileExt string
+	var rex *regexp.Regexp
+	// Might remove this extension logic altogether in context of imp_subseq_line_detection
+	if exti := strings.LastIndex(filename, "."); exti > 0 {
+		fileExt = filename[exti:]
+		rex = extRegexps[fileExt]
+	}
+	if rex == nil {
+		rex = treSimple
+	}
+	return todoExtractor{
+		filename: filename,
+		prefix:   extPrefixes[fileExt],
+		rex:      rex,
+		tii:      rex.SubexpIndex("ID"),
+		tti:      rex.SubexpIndex("Timestamp"),
+		tpi:      rex.SubexpIndex("Priority"),
+		tdi:      rex.SubexpIndex("Title"),
+	}
 }
 
 func (tex todoExtractor) Extract(lineNum int, line *git.Line) *TodoDesc {
@@ -92,32 +122,32 @@ func (tex todoExtractor) ExtractFull(lineNum int, lines []*git.Line) *TodoDesc {
 	}
 	todo := tex.Extract(lineNum, lines[lineNum])
 	lineNum++
-	// TODO [todo_extractor_full]: Extract details from subsequent Todo lines
-	return todo
-}
-
-func getTodoExtractor(filename string) todoExtractor {
+	detailLines := []string{}
 	// TODO [imp_subseq_line_detection]: Improve detection of subsequent lines.
 	// Can't hard code all file extensions, so the detector needs to be smarter.
-	// This is most important for the Todo body (which should be a new function):
 	// For instance, if a TODO with a certain prefix is found, all subsequent lines
 	// with the same prefix should be included (with the prefix trimmed).
-	exti := strings.LastIndex(filename, ".")
-	var rex *regexp.Regexp
-	if exti > 0 {
-		rex = extRegexps[filename[exti:]]
+	for lineNum < len(lines) {
+		lineText := lines[lineNum].Text
+		// Empty line should always terminate the todo.
+		if strings.TrimSpace(lineText) == "" {
+			break
+		}
+		// Ignore whitespace before the prefix, but not after,
+		// because markdown requires two trailing whitespace to force newline IIRC.
+		lineText = strings.TrimLeftFunc(lineText, unicode.IsSpace)
+		// If the extractor has registered a prefix, any line missing the prefix will terminate the todo.
+		if tex.prefix != "" {
+			if !strings.HasPrefix(lineText, tex.prefix) {
+				break
+			}
+			lineText = strings.TrimPrefix(lineText, tex.prefix)
+		}
+		detailLines = append(detailLines, lineText)
+		lineNum++
 	}
-	if rex == nil {
-		rex = treSimple
-	}
-	return todoExtractor{
-		filename: filename,
-		rex:      rex,
-		tii:      rex.SubexpIndex("ID"),
-		tti:      rex.SubexpIndex("Timestamp"),
-		tpi:      rex.SubexpIndex("Priority"),
-		tdi:      rex.SubexpIndex("Title"),
-	}
+	todo.Details = strings.Join(detailLines, "\n")
+	return todo
 }
 
 var ErrFileIsBinary = errors.New("the file is binary")
@@ -139,7 +169,8 @@ func getLines(c *object.Commit, f *object.File) ([]*git.Line, error) {
 	for i, line := range lines {
 		glines[i] = &git.Line{Text: line}
 	}
-	// TODO [use_git_blame_when_fixed]: 2022-12-10T20:45Z Use git.Blame instead of the temporary workaround
+	// TODO [use_git_blame_when_fixed]: 2022-12-10T20:45Z Use git.Blame instead of the temporary workaround,
+	// like this:
 	//br, err := git.Blame(c, f.Name)
 	//if err != nil {
 	//	return nil, err

@@ -3,8 +3,8 @@ package main
 import (
 	"embed"
 	"html/template"
-	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/go-git/go-git/v5"
@@ -13,10 +13,11 @@ import (
 
 var (
 	//go:embed templates/*
-	wwwFS     embed.FS
-	todoTmpl  = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/todo.tmpl.html"))
-	errorTmpl = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/error.tmpl.html"))
-	reposTmpl = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/repos.tmpl.html"))
+	wwwFS           embed.FS
+	todoTmpl        = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/todo.tmpl.html"))
+	todoDetailsTmpl = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/todo-details.tmpl.html"))
+	errorTmpl       = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/error.tmpl.html"))
+	reposTmpl       = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/repos.tmpl.html"))
 )
 
 type Link struct {
@@ -47,8 +48,13 @@ type RepoPageData struct {
 }
 
 type TodoPageData struct {
-	PageContext
+	PageData
 	Todos []TodoDesc
+}
+
+type TodoDetailsData struct {
+	PageData
+	Todo TodoDesc
 }
 
 func serve() {
@@ -120,17 +126,15 @@ func staticFile(w http.ResponseWriter, r *http.Request, rpath string) bool {
 	return true
 }
 
-func (pc PageContext) todoHandler(w http.ResponseWriter, r *http.Request) {
+func (pc *PageContext) todoHandler(w http.ResponseWriter, r *http.Request) {
 	filename := r.URL.Query().Get("file")
-	if filename == "" {
-		pc.todoListHandler(w, r)
+	lineNum, err := strconv.Atoi(r.URL.Query().Get("line"))
+	// Todo specified - get details page
+	if filename != "" && err == nil {
+		pc.todoDetailsHandler(w, r, filename, lineNum)
 		return
 	}
-	// NOTE [todo_details]: If request contains ?file=<file_name>&line=<line_num>,
-	// find todo details and respond with single todo page.
-}
-
-func (pc *PageContext) todoListHandler(w http.ResponseWriter, r *http.Request) {
+	// List all project TODOs
 	todos, err := FindCommitTodos(*pc.Commit)
 	if err != nil {
 		pc.errorPageServer(w, "failed to find todos", err)
@@ -138,11 +142,32 @@ func (pc *PageContext) todoListHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	Sort(todos, []string{"pri", "id"})
 	data := TodoPageData{
-		PageContext: *pc,
-		Todos:       todos,
+		PageData: pc.PageData,
+		Todos:    todos,
 	}
-	err = todoTmpl.Execute(w, data)
+	logPageTmplErr("todo_list", todoTmpl.Execute(w, data))
+}
+
+func (pc *PageContext) todoDetailsHandler(w http.ResponseWriter, r *http.Request, filename string, lineNum int) {
+	file, err := pc.Commit.File(filename)
 	if err != nil {
-		log.Println("error in todo.tmpl.html:", err)
+		pc.errorPageNotFound(w, "file not found: "+filename)
+		return
 	}
+	lines, err := getLines(pc.Commit, file)
+	if err != nil {
+		pc.errorPageServer(w, "failed to get contents of file:"+filename, err)
+		return
+	}
+	tex := getTodoExtractor(filename)
+	todo := tex.ExtractFull(lineNum, lines)
+	if todo == nil {
+		pc.errorPageNotFound(w, "no todo found at the given location")
+		return
+	}
+	data := TodoDetailsData{
+		PageData: pc.PageData,
+		Todo:     *todo,
+	}
+	logPageTmplErr("todo_details", todoDetailsTmpl.Execute(w, data))
 }

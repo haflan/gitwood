@@ -3,7 +3,7 @@
     {{if .Todos}}
     {{range .Todos}}
     <div class="gw-todo{{if .Priority}} gw-todo-pri-{{.Priority}}{{end}}">
-        <a href="/todo/{{.FileName}}?line={{.Line}}" class="gw-todo-title">{{.Title}}</a>
+        <a href="?file={{.FileName}}&line={{.Line}}" class="gw-todo-title">{{.Title}}</a>
         <div class="gw-todo-data">
             {{ if .Priority }}
             <span class="gw-todo-pri">({{.Priority}})</span>
