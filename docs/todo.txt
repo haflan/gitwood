@@ -8,7 +8,7 @@ which should include:
 * repos  : _List of repos that should be served_
 
 NOTE [persistent_and_cache]: Cache filename format can look like this:
-    filename = sha256sum(projectPath + '@' + commitHash + '@' + operationDetails)[:16]
+    filename = sha256sum(projectPath + '@' + commitHash + '@' + operationDetails)[:8]
 because path, hash and operation (details) fully identifies the data of interest.
 With operationDetails, I mean the name of the operation in case of listings,
 and name + identifier (like filename and line number) for a single resource.

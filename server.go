@@ -138,7 +138,7 @@ func (pc *PageContext) todoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// List all project TODOs
-	todoMap := pc.requireCachedTodos(w, pc.projectPath, pc.Commit.Hash.String(), 2*time.Second)
+	todoMap := pc.requireCachedTodos(w, pc.projectPath, pc.Commit.Hash.String(), 3*time.Second)
 	if todoMap == nil {
 		return
 	}

@@ -47,15 +47,10 @@ func generateAndCacheData(key string, generate func() (any, error)) {
 		c = dataCache.cacheGenResultMap[key].notifier
 		dataCache.cacheGenResultMap[key].notifier = nil
 		dataCache.Unlock()
-		// ...and try to notify it.
-		if c != nil {
-			// NOTE: A proper PubSub is needed for this to scale: https://eli.thegreenplace.net/2020/pubsub-using-channels-in-go/,
-			// but I doubt that will be a problem with one user :o)
-			select {
-			case c <- struct{}{}:
-			default:
-			}
-		}
+		// Closing the channel will make any receive from it finish without blocking,
+		// i.e. it works as a notification for all operations that wait for it, just like desired.
+		// (Maybe using context.Context is more idiomatic for patterns like this, but meh...)
+		close(c)
 	}()
 }
 

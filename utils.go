@@ -127,7 +127,7 @@ const (
 
 func commitCacheKey(projectPath, commitHash, operation string) string {
 	sum := sha256.Sum256([]byte(strings.Join([]string{projectPath, commitHash, "todo"}, "@")))
-	return hex.EncodeToString(sum[:])[:16]
+	return hex.EncodeToString(sum[:])[:SettingCacheHashSize]
 }
 
 func prettyTime(ts time.Time) string {
