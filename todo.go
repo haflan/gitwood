@@ -216,7 +216,7 @@ func ReadFullTodo(c *object.Commit, f *object.File, lineNum int) (*TodoDesc, err
 }
 
 func FindCommitTodos(c object.Commit) ([]TodoDesc, error) {
-	var todos []TodoDesc
+	todos := []TodoDesc{}
 	fIter, err := c.Files()
 	if err != nil {
 		return nil, err
@@ -236,6 +236,7 @@ func FindCommitTodos(c object.Commit) ([]TodoDesc, error) {
 }
 
 // Sorting and filtering
+// NOTE: This is copied directly from the old skog-gen project - much of it can probably be removed.
 
 type TodoFieldsShown struct {
 	Description bool

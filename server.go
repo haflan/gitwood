@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -38,8 +39,9 @@ type PageData struct {
 
 type PageContext struct {
 	PageData
-	Commit *object.Commit
-	Repo   *git.Repository
+	projectPath string
+	Commit      *object.Commit
+	Repo        *git.Repository
 }
 
 type RepoPageData struct {
@@ -74,6 +76,7 @@ func serve() {
 				RootPath:    SettingServerPathPrefix,
 				Breadcrumbs: makeBreadcrumbs(projectPath),
 			},
+			projectPath: projectOperation[0],
 		}
 		if len(projectOperation) > 1 && projectOperation[1] != "" {
 			pc.Operation = projectOperation[1]
@@ -135,9 +138,8 @@ func (pc *PageContext) todoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// List all project TODOs
-	todos, err := FindCommitTodos(*pc.Commit)
-	if err != nil {
-		pc.errorPageServer(w, "failed to find todos", err)
+	todos := pc.requireCachedTodos(w, pc.projectPath, pc.Commit.Hash.String(), 2*time.Second)
+	if todos == nil {
 		return
 	}
 	Sort(todos, []string{"pri", "id"})

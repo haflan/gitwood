@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -66,7 +68,9 @@ func (pc *PageContext) mustGetRef(w http.ResponseWriter, refName string) plumbin
 	return ref.Hash()
 }
 
-// ExtractCommit tries to load the commit with the given hash, if any.
+// TODO [clean_up_req_commit]: refactor: rewrite requireCommit for new cache centric approach.
+
+// requireCommit tries to load the commit with the given hash, if any.
 // If no hash is given, HEAD is loaded.
 func (pc *PageContext) requireCommit(w http.ResponseWriter, r *http.Request) {
 	commit := r.URL.Query().Get("commit")
@@ -101,7 +105,15 @@ func (pc *PageContext) requireCommit(w http.ResponseWriter, r *http.Request) {
 			pc.errorPageServer(w, "failed to fetch commit with hash: "+hash.String(), err)
 		}
 		pc.Commit = nil // Just to be sure
+		return
 	}
+	// Commit found - generate all relevant data for it
+	generateAndCacheData(
+		commitCacheKey(pc.projectPath, hash.String(), "todo"),
+		func() (any, error) {
+			return FindCommitTodos(*pc.Commit)
+		},
+	)
 }
 
 const (
@@ -112,6 +124,11 @@ const (
 	sinceMonth = 31 * sinceDay
 	sinceYear  = 365 * sinceDay
 )
+
+func commitCacheKey(projectPath, commitHash, operation string) string {
+	sum := sha256.Sum256([]byte(strings.Join([]string{projectPath, commitHash, "todo"}, "@")))
+	return hex.EncodeToString(sum[:])[:16]
+}
 
 func prettyTime(ts time.Time) string {
 	since := time.Since(ts)
