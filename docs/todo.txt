@@ -80,3 +80,12 @@ This feature requires the list of todos for the active commit,
 so if it doesn't exist, a cache job (see #persistent_and_cache) should be triggered and waited for,
 maybe a second max.
 If cache job doesn't finish in time, links will simply not be generated before the page is returned (best effort)
+
+TODO [todo_use_id_mapping]: Always refer to todo by ID instead of filename + line num.
+In addition to making it easier to implement #todo_references,
+the new mapping from Todo ID to Todo makes it easy to implement this.
+The advantage of referring to Todos by ID instead of file + line is that the
+link to a Todo stays the same across commits, even if the source file changes.
+-
+Maybe use a path param instead of query params too, so that the link looks like
+`/gitwood/-/todo/todo_use_id_mapping`, which is slightly more user friendly.

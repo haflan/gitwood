@@ -79,7 +79,7 @@ func getCachedData(key string, waitFor time.Duration) (any, error) {
 	return result.data, result.err
 }
 
-func (pc *PageContext) requireCachedTodos(w http.ResponseWriter, projectPath, commitHash string, waitFor time.Duration) []TodoDesc {
+func (pc *PageContext) requireCachedTodos(w http.ResponseWriter, projectPath, commitHash string, waitFor time.Duration) map[string]TodoDesc {
 	atodos, err := getCachedData(commitCacheKey(projectPath, commitHash, "todo"), waitFor)
 	if err != nil {
 		if errors.Is(err, ErrCacheWaitTimeout) {
@@ -91,7 +91,7 @@ func (pc *PageContext) requireCachedTodos(w http.ResponseWriter, projectPath, co
 		}
 		return nil
 	}
-	todos, ok := atodos.([]TodoDesc)
+	todos, ok := atodos.(map[string]TodoDesc)
 	if !ok {
 		pc.errorPageServer(w, "unexpected error when loading todos", err)
 		return nil

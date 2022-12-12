@@ -215,8 +215,8 @@ func ReadFullTodo(c *object.Commit, f *object.File, lineNum int) (*TodoDesc, err
 	return todo, nil
 }
 
-func FindCommitTodos(c object.Commit) ([]TodoDesc, error) {
-	todos := []TodoDesc{}
+func FindCommitTodos(c object.Commit) (map[string]TodoDesc, error) {
+	todos := map[string]TodoDesc{}
 	fIter, err := c.Files()
 	if err != nil {
 		return nil, err
@@ -226,7 +226,9 @@ func FindCommitTodos(c object.Commit) ([]TodoDesc, error) {
 		if err != nil {
 			return err
 		}
-		todos = append(todos, newTodos...)
+		for _, t := range newTodos {
+			todos[t.ID] = t
+		}
 		return nil
 	})
 	if err != nil {

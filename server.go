@@ -138,9 +138,13 @@ func (pc *PageContext) todoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// List all project TODOs
-	todos := pc.requireCachedTodos(w, pc.projectPath, pc.Commit.Hash.String(), 2*time.Second)
-	if todos == nil {
+	todoMap := pc.requireCachedTodos(w, pc.projectPath, pc.Commit.Hash.String(), 2*time.Second)
+	if todoMap == nil {
 		return
+	}
+	todos := make([]TodoDesc, 0, len(todoMap))
+	for _, t := range todoMap {
+		todos = append(todos, t)
 	}
 	Sort(todos, []string{"pri", "id"})
 	data := TodoPageData{
