@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -60,7 +61,8 @@ type TodoDetailsData struct {
 }
 
 func serve() {
-	http.ListenAndServe(":8080", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	log.Println("starting server at", SettingPort)
+	http.ListenAndServe(SettingPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rpath := strings.TrimPrefix(r.URL.Path, SettingServerPathPrefix)
 		if staticFile(w, r, rpath) {
 			return
