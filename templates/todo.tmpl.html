@@ -3,7 +3,7 @@
     {{if .Todos}}
     {{range .Todos}}
     <div class="gw-todo{{if .Priority}} gw-todo-pri-{{.Priority}}{{end}}">
-        <a href="?file={{.FileName}}&line={{.Line}}" class="gw-todo-title">{{.Title}}</a>
+        <a href="?id={{.ID}}" class="gw-todo-title">{{.Title}}</a>
         <div class="gw-todo-data">
             {{ if .Priority }}
             <span class="gw-todo-pri">({{.Priority}})</span>
@@ -19,6 +19,14 @@
             {{ if .Author}}
             <span class="gw-todo-info-by"> by </span> 
             <span class="gw-todo-author">{{.Author}}</span>
+            {{- /*
+                TODO [todo_context_link]: Link to the *raw* file and line num for a todo
+                While it makes sense to use todo ID for the todo details page, it should
+                still be possible to see it in context in the raw source file, i.e. link to
+                 <projectPath>/-/files/<filename>#<line_num>
+                This depends on the implementation of the commit file browser, of course.
+
+            */ -}}
             {{end}}
             {{end}}
         </div>

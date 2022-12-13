@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -67,9 +66,9 @@ func serve() {
 		if staticFile(w, r, rpath) {
 			return
 		}
-		// General format of paths is <project path>[/-/<operation>]
-		projectOperation := strings.Split(rpath, "/-/")
-		projectPath := projectOperation[0]
+		// General format of paths is <project path>[/-/<operation>][/<resource>]
+		projectPathOperation := strings.Split(rpath, "/-/")
+		projectPath := projectPathOperation[0]
 		// TODO [use_files_as_default]: When file page is implemented, used that as default project page
 		pc := PageContext{
 			PageData: PageData{
@@ -78,10 +77,10 @@ func serve() {
 				RootPath:    SettingServerPathPrefix,
 				Breadcrumbs: makeBreadcrumbs(projectPath),
 			},
-			projectPath: projectOperation[0],
+			projectPath: projectPathOperation[0],
 		}
-		if len(projectOperation) > 1 && projectOperation[1] != "" {
-			pc.Operation = projectOperation[1]
+		if len(projectPathOperation) > 1 && projectPathOperation[1] != "" {
+			pc.Operation = projectPathOperation[1]
 			pc.Title += " - " + pc.Operation
 		}
 		pc.requireRepoOrList(w, projectPath)
@@ -132,19 +131,23 @@ func staticFile(w http.ResponseWriter, r *http.Request, rpath string) bool {
 }
 
 func (pc *PageContext) todoHandler(w http.ResponseWriter, r *http.Request) {
-	filename := r.URL.Query().Get("file")
-	lineNum, err := strconv.Atoi(r.URL.Query().Get("line"))
-	// Todo specified - get details page
-	if filename != "" && err == nil {
-		pc.todoDetailsHandler(w, r, filename, lineNum)
-		return
-	}
 	// List all project TODOs
 	todoMap := pc.requireCachedTodos(w, pc.projectPath, pc.Commit.Hash.String(), 3*time.Second)
 	if todoMap == nil {
 		return
 	}
+	// Will probably use path param instead, as mentioned in #todo_use_id_mapping.
+	id := r.URL.Query().Get("id")
+	if id != "" {
+		pc.todoDetailsHandler(w, r, todoMap, id)
+	} else {
+		pc.todoListHandler(w, r, todoMap)
+	}
+}
+
+func (pc *PageContext) todoListHandler(w http.ResponseWriter, r *http.Request, todoMap map[string]TodoDesc) {
 	todos := make([]TodoDesc, 0, len(todoMap))
+
 	for _, t := range todoMap {
 		todos = append(todos, t)
 	}
@@ -156,26 +159,32 @@ func (pc *PageContext) todoHandler(w http.ResponseWriter, r *http.Request) {
 	logPageTmplErr("todo_list", todoTmpl.Execute(w, data))
 }
 
-func (pc *PageContext) todoDetailsHandler(w http.ResponseWriter, r *http.Request, filename string, lineNum int) {
-	file, err := pc.Commit.File(filename)
+func (pc *PageContext) todoDetailsHandler(w http.ResponseWriter, r *http.Request, todoMap map[string]TodoDesc, id string) {
+	todo, ok := todoMap[id]
+	if !ok {
+		pc.errorPageNotFound(w, "no todo with id: "+id)
+		return
+	}
+	file, err := pc.Commit.File(todo.FileName)
 	if err != nil {
-		pc.errorPageNotFound(w, "file not found: "+filename)
+		pc.errorPageNotFound(w, "file not found: "+todo.FileName)
 		return
 	}
 	lines, err := getLines(pc.Commit, file)
 	if err != nil {
-		pc.errorPageServer(w, "failed to get contents of file:"+filename, err)
+		pc.errorPageServer(w, "failed to get contents of file: "+todo.FileName, err)
 		return
 	}
-	tex := getTodoExtractor(filename)
-	todo := tex.ExtractFull(lineNum, lines)
-	if todo == nil {
+	// NOTE [persistent_and_cache]: Caching full Todo remains
+	tex := getTodoExtractor(todo.FileName)
+	fullTodo := tex.ExtractFull(todo.Line, lines)
+	if fullTodo == nil {
 		pc.errorPageNotFound(w, "no todo found at the given location")
 		return
 	}
 	data := TodoDetailsData{
 		PageData: pc.PageData,
-		Todo:     *todo,
+		Todo:     *fullTodo,
 	}
 	logPageTmplErr("todo_details", todoDetailsTmpl.Execute(w, data))
 }
