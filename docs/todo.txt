@@ -62,9 +62,6 @@ NOTE [todo_details_page]: Support Markdown for todo details too?
 With [gomarkdown](https://github.com/gomarkdown/markdown) this should be fairly easy,
 but don't spend time on it until the todo page is working fine otherwise.
 
-TODO [support_submodules]: feature: Support submodules, both in requests and autoregistry.
-Mostly relevant for local (non-bare) git repos, not on servers.
-
 TODO [todo_sort_and_filter]: feature: Add inputs for sorting and filtering todo list. 
 
 TODO [todo_search]: feature: Free text search for todos
@@ -89,3 +86,30 @@ link to a Todo stays the same across commits, even if the source file changes.
 -
 Maybe use a path param instead of query params too, so that the link looks like
 `/gitwood/-/todo/todo_use_id_mapping`, which is slightly more user friendly.
+
+TODO [support_submodules]: feature (local): Support submodules, both in requests and autoregistry.
+Mostly relevant for local (non-bare) git repos, not on servers.
+
+TODO [live_staging_mode]: feature (local): Add support for viewing todos in new changes and staging.
+Not requiring a commit to see rendered todos can help eliminate formatting mistakes.
+Consider making `live` an alternative to a ref or commit hash when viewing todos.
+
+TODO [idea_dump]: Idea dump
+Don't want to fill up the todo list with stuff that are not priority,
+so this todo acts as an idea dump.
+
+NOTE [idea_dump]: Ability to overwrite the default web pages:
+Here's how it can work:
+* User runs command `gitwood -fs templates/ [-live]`
+* If `-live`: gitwood tries to (re)load pages from disk for every request
+* Otherwise: gitwood tries to load pages on startup only,
+  and stores the pages found in memory instead of the embedded pages
+In both cases, when a page is not defined, gitwood will fall back on the
+embedded default page.
+
+TODO [static_generator]: Static page generator.
+This project started as an alternative to [stagit](https://codemadness.org/stagit.html),
+i.e. a static git page generator.
+gitwood now serves content dynamically instead, but it should be able to do both.
+_The scope will be limited to the minimal work required to avoid any broken pages_,
+at least for starters.
