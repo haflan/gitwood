@@ -193,7 +193,7 @@ func (pc *PageContext) todoDetailsHandler(w http.ResponseWriter, r *http.Request
 	}
 	todoRefs := map[string]string{}
 	for tr := range todoMap {
-		todoRefs[tr] = path.Join("/"+pc.RootPath, "-", "todo") + "?id=" + tr
+		todoRefs[tr] = path.Join("/"+pc.RootPath, pc.projectPath, "-", "todo") + "?id=" + tr
 	}
 	data := TodoDetailsData{
 		PageData:        pc.PageData,

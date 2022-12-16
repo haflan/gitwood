@@ -22,12 +22,13 @@ func markdownToHTML(references map[string]string, md string) template.HTML {
 			foundReferences[id] = link
 		}
 	}
+	html := string(bluemonday.UGCPolicy().SanitizeBytes(
+		markdown.ToHTML([]byte(md), nil, nil),
+	))
+	// bluemonday.UGCPolicy() strips classes.
+	// Resolving references after sanitization as a quick fix.
 	for ref, link := range foundReferences {
-		md = strings.ReplaceAll(md, "#"+ref, fmt.Sprintf(`<a href="%v" class="ref-link" >#%v</a>`, link, ref))
+		html = strings.ReplaceAll(html, "#"+ref, fmt.Sprintf(`<a href="%v" class="ref-link" >#%v</a>`, link, ref))
 	}
-	return template.HTML(
-		bluemonday.UGCPolicy().SanitizeBytes(
-			markdown.ToHTML([]byte(md), nil, nil),
-		),
-	)
+	return template.HTML(html)
 }
