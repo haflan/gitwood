@@ -58,7 +58,8 @@ type TodoPageData struct {
 
 type TodoDetailsData struct {
 	PageData
-	Todo TodoDesc
+	Todo            TodoDesc
+	RenderedDetails template.HTML
 }
 
 func serve() {
@@ -190,8 +191,9 @@ func (pc *PageContext) todoDetailsHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 	data := TodoDetailsData{
-		PageData: pc.PageData,
-		Todo:     *fullTodo,
+		PageData:        pc.PageData,
+		Todo:            *fullTodo,
+		RenderedDetails: markdownToHTML(fullTodo.Details),
 	}
 	logPageTmplErr("todo_details", todoDetailsTmpl.Execute(w, data))
 }

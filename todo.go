@@ -133,6 +133,9 @@ func (tex todoExtractor) ExtractFull(lineNum int, lines []*git.Line) *TodoDesc {
 		if strings.TrimSpace(lineText) == "" {
 			break
 		}
+		if strings.HasPrefix(strings.TrimSpace(lineText), "---") {
+			lineText = ""
+		}
 		// Ignore whitespace before the prefix, but not after,
 		// because markdown requires two trailing whitespace to force newline IIRC.
 		lineText = strings.TrimLeftFunc(lineText, unicode.IsSpace)
