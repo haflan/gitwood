@@ -2,7 +2,11 @@ module gitwood
 
 go 1.19
 
-require github.com/go-git/go-git/v5 v5.5.0
+require (
+	github.com/go-git/go-git/v5 v5.5.0
+	github.com/gomarkdown/markdown v0.0.0-20221013030248-663e2500819c
+	github.com/microcosm-cc/bluemonday v1.0.21
+)
 
 require (
 	github.com/Microsoft/go-winio v0.5.2 // indirect
@@ -13,12 +17,10 @@ require (
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/go-git/go-billy/v5 v5.3.1 // indirect
-	github.com/gomarkdown/markdown v0.0.0-20221013030248-663e2500819c // indirect
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/microcosm-cc/bluemonday v1.0.21 // indirect
 	github.com/pjbgf/sha1cd v0.2.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/skeema/knownhosts v1.1.0 // indirect

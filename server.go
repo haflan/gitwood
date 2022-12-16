@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 
@@ -190,10 +191,14 @@ func (pc *PageContext) todoDetailsHandler(w http.ResponseWriter, r *http.Request
 		pc.errorPageNotFound(w, "no todo found at the given location")
 		return
 	}
+	todoRefs := map[string]string{}
+	for tr := range todoMap {
+		todoRefs[tr] = path.Join(pc.RootPath, "-", "todo", tr)
+	}
 	data := TodoDetailsData{
 		PageData:        pc.PageData,
 		Todo:            *fullTodo,
-		RenderedDetails: markdownToHTML(fullTodo.Details),
+		RenderedDetails: markdownToHTML(todoRefs, fullTodo.Details),
 	}
 	logPageTmplErr("todo_details", todoDetailsTmpl.Execute(w, data))
 }

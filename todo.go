@@ -105,7 +105,7 @@ func (tex todoExtractor) Extract(lineNum int, line *git.Line) *TodoDesc {
 		Title:    match[tex.tdi],
 		Priority: match[tex.tpi],
 	}
-	td.Timestamp, _ = time.Parse("2006-01-02T15:04Z", string(match[tex.tti]))
+	td.Timestamp, _ = time.Parse("2006-01-02T15:04Z", match[tex.tti])
 	// NOTE [use_git_blame_when_fixed]: 2022-12-10T21:45 When git.Blame() is fixed, timestamp is available for all Todos
 	// if ts.IsZero() {
 	// 	ts = line.Date
