@@ -3,6 +3,7 @@
     {{range .Repos}}
     <div class="gw-repo">
         <a href="{{.Href}}{{if $.Operation}}/-/{{$.Operation}}{{end}}" class="gw-repo-path">{{.Text}}</a>
+        <div class="gw-repo-description">{{.Description}}</div>
     </div>
     {{end}}
 </div>

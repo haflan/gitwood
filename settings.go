@@ -16,7 +16,6 @@ func envOrDefault(key, defaultVal string) string {
 var (
 	SettingRootDir          = os.Getenv("PWD")
 	SettingServerPathPrefix = strings.TrimPrefix(strings.TrimSuffix(os.Getenv("GITWOOD_PREFIX"), "/"), "/")
-	SettingRegisteredRepos  []string
 	SettingCacheHashSize    = 8
 	SettingPort             = ":" + envOrDefault("GITWOOD_PORT", "8750")
 )

@@ -23,6 +23,11 @@ so the only difference between the persistent and in-memory modes will be that p
 In-memory cache can be implemented with a `map[string]any`,
 where the key is the hash / filename generated as described above.
 
+NOTE [persistent_and_cache]: One reason this is high priority is that,
+in addition to making gitwood faster,
+it will make it possible to decide which repos should be available.
+
+
 TODO [operation_timeout]: feature: Background (cache generating) jobs.
 Do heavy operations in the background and wait for a limited time.
 Some operations may search through a large amount of repo files,

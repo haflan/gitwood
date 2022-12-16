@@ -23,7 +23,7 @@ func markdownToHTML(references map[string]string, md string) template.HTML {
 		}
 	}
 	for ref, link := range foundReferences {
-		md = strings.ReplaceAll(md, "#"+ref, fmt.Sprintf(`<a href="%v"><code>#%v</code></a>`, link, ref))
+		md = strings.ReplaceAll(md, "#"+ref, fmt.Sprintf(`<a href="%v" class="ref-link" >#%v</a>`, link, ref))
 	}
 	return template.HTML(
 		bluemonday.UGCPolicy().SanitizeBytes(

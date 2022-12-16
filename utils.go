@@ -3,118 +3,11 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"fmt"
-	"net/http"
 	"path"
 	"strings"
 	"time"
-
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
 )
-
-func (pc *PageContext) listReposWithPrefix(w http.ResponseWriter, pathPrefix string) {
-	data := RepoPageData{
-		PageData: pc.PageData,
-		Repos:    []Link{},
-	}
-	for _, repoPath := range SettingRegisteredRepos {
-		if strings.HasPrefix(repoPath, pathPrefix) {
-			data.Repos = append(data.Repos, Link{
-				Text: repoPath,
-				Href: path.Join("/", SettingServerPathPrefix, repoPath),
-			})
-		}
-	}
-	if len(data.Repos) == 0 {
-		pc.errorPageNotFound(w, "no repos matching the path: "+pathPrefix)
-		return
-	}
-	reposTmpl.Execute(w, data)
-}
-
-// requireRepoOrList tries to extract a git repo given by repoPath.
-// If no repo exists at the path, it looks for repos with the path as prefix.
-func (pc *PageContext) requireRepoOrList(w http.ResponseWriter, repoPath string) {
-	var err error
-	dirPrefix := path.Join(SettingRootDir, repoPath)
-	pc.Repo, err = git.PlainOpen(dirPrefix)
-	// Any request to a non-repo should try to load the path as a directory
-	if errors.Is(err, git.ErrRepositoryNotExists) {
-		pc.listReposWithPrefix(w, repoPath)
-	} else if err != nil {
-		pc.errorPageServer(w, "unexpected error when trying to open repository", err)
-	}
-}
-
-func (pc *PageContext) mustGetRef(w http.ResponseWriter, refName string) plumbing.Hash {
-	pi := strings.LastIndex(refName, "/")
-	if pi == len(refName)-1 {
-		pc.errorRequest(w, "invalid ref: "+refName)
-		return plumbing.ZeroHash
-	}
-	prefix := refName[:pi+1]
-	ref, err := pc.Repo.Reference(plumbing.ReferenceName(refName), true)
-	if err != nil {
-		if errors.Is(err, plumbing.ErrReferenceNotFound) {
-			pc.errorPageNotFound(w, "could not find the given ref: "+refName)
-		} else {
-			pc.errorPageServer(w, "failed to find the given ref: "+refName, err)
-		}
-		return plumbing.ZeroHash
-	}
-	pc.FriendlyCommit = strings.TrimPrefix(refName, prefix)
-	return ref.Hash()
-}
-
-// TODO [clean_up_req_commit]: refactor: rewrite requireCommit for new cache centric approach.
-
-// requireCommit tries to load the commit with the given hash, if any.
-// If no hash is given, HEAD is loaded.
-func (pc *PageContext) requireCommit(w http.ResponseWriter, r *http.Request) {
-	commit := r.URL.Query().Get("commit")
-	var hash plumbing.Hash
-	var err error
-	switch {
-	case strings.HasPrefix(commit, "refs/"):
-		hash = pc.mustGetRef(w, commit)
-	case commit == "":
-		var ref *plumbing.Reference
-		ref, err = pc.Repo.Head()
-		if err != nil {
-			pc.errorPageServer(w, "failed to find HEAD for repository", err)
-			return
-		}
-		pc.FriendlyCommit = ref.Name().Short()
-		hash = ref.Hash()
-	default:
-		hash = plumbing.NewHash(commit)
-	}
-	if hash.IsZero() {
-		return
-	}
-	if pc.FriendlyCommit == "" {
-		pc.FriendlyCommit = commit[:8]
-	}
-	pc.Commit, err = pc.Repo.CommitObject(hash)
-	if err != nil {
-		if errors.Is(err, plumbing.ErrObjectNotFound) {
-			pc.errorPageNotFound(w, "no such commit: "+hash.String())
-		} else {
-			pc.errorPageServer(w, "failed to fetch commit with hash: "+hash.String(), err)
-		}
-		pc.Commit = nil // Just to be sure
-		return
-	}
-	// Commit found - generate all relevant data for it
-	generateAndCacheData(
-		commitCacheKey(pc.projectPath, hash.String(), "todo"),
-		func() (any, error) {
-			return FindCommitTodos(*pc.Commit)
-		},
-	)
-}
 
 func commitCacheKey(projectPath, commitHash, operation string) string {
 	sum := sha256.Sum256([]byte(strings.Join([]string{projectPath, commitHash, "todo"}, "@")))
@@ -124,6 +17,10 @@ func commitCacheKey(projectPath, commitHash, operation string) string {
 func slashes(in string) string {
 	in = "/" + strings.TrimPrefix(in, "/")
 	return strings.TrimSuffix(in, "/") + "/"
+}
+
+func noSlashes(in string) string {
+	return strings.TrimPrefix(strings.TrimSuffix(in, "/"), "/")
 }
 
 const (

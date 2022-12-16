@@ -49,7 +49,7 @@ type PageContext struct {
 
 type RepoPageData struct {
 	PageData
-	Repos []Link
+	Repos []RepoInfo
 }
 
 type TodoPageData struct {
@@ -193,7 +193,7 @@ func (pc *PageContext) todoDetailsHandler(w http.ResponseWriter, r *http.Request
 	}
 	todoRefs := map[string]string{}
 	for tr := range todoMap {
-		todoRefs[tr] = path.Join(pc.RootPath, "-", "todo", tr)
+		todoRefs[tr] = path.Join("/"+pc.RootPath, "-", "todo") + "?id=" + tr
 	}
 	data := TodoDetailsData{
 		PageData:        pc.PageData,
