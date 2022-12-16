@@ -3,13 +3,13 @@
     {{if .Todos}}
     {{range .Todos}}
     <div class="gw-todo{{if .Priority}} gw-todo-pri-{{.Priority}}{{end}}">
-        <a href="?id={{.ID}}" class="gw-todo-title">{{.Title}}</a>
+        <a href="{{$.ProjectLink}}-/todo/?id={{.ID}}" class="gw-todo-title">{{.Title}}</a>
         <div class="gw-todo-data">
             {{ if .Priority }}
             <span class="gw-todo-pri">({{.Priority}})</span>
             <span class="gw-todo-dot">&middot;</span>
             {{end}}
-            <span class="gw-todo-id">{{.ID}}</span>
+            <a href="{{$.ProjectLink}}-/files/{{.FileName}}#{{.Line}}" title="File context"><span class="gw-todo-id">{{.ID}}</span></a>
             {{ if or .Author .TimeAgoString}}
             <span class="gw-todo-dot">&middot;</span>
             <span class="gw-todo-info-created">Created </span> 

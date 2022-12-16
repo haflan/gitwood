@@ -113,3 +113,5 @@ i.e. a static git page generator.
 gitwood now serves content dynamically instead, but it should be able to do both.
 _The scope will be limited to the minimal work required to avoid any broken pages_,
 at least for starters.
+
+TODO [repo_descriptions]: Read the 'description' file in each repo and use as one-line description

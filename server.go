@@ -34,7 +34,9 @@ type PageData struct {
 	Breadcrumbs []Link
 	// FriendlyCommit is a branch name, tag or the first 8 characters of the commit hash
 	FriendlyCommit string
+	ProjectLink    string
 	Operation      string
+	Resource       string
 }
 
 type PageContext struct {
@@ -72,15 +74,20 @@ func serve() {
 		// TODO [use_files_as_default]: When file page is implemented, used that as default project page
 		pc := PageContext{
 			PageData: PageData{
-				Title:       strings.TrimPrefix(projectPath, "/"),
+				Title:       "gitwood",
 				StyleLink:   "/style.css",
 				RootPath:    SettingServerPathPrefix,
 				Breadcrumbs: makeBreadcrumbs(projectPath),
+				ProjectLink: slashes(projectPath),
 			},
-			projectPath: projectPathOperation[0],
+			projectPath: projectPath,
 		}
 		if len(projectPathOperation) > 1 && projectPathOperation[1] != "" {
-			pc.Operation = projectPathOperation[1]
+			op := strings.Split(projectPathOperation[1], "/")
+			pc.Operation = op[0]
+			if len(op) > 1 && op[1] != "" {
+				pc.Resource = op[1]
+			}
 			pc.Title += " - " + pc.Operation
 		}
 		pc.requireRepoOrList(w, projectPath)

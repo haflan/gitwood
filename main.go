@@ -15,13 +15,27 @@ func init() {
 	// Manually maintained lists, when implemented, should be the preferred way to use gitwood.
 	// This WalkDir is just here to make it possible to use gitwood without any config or args.
 	log.Println("no repo register found - searching in", SettingRootDir)
-	err := filepath.WalkDir(SettingRootDir, func(path string, d fs.DirEntry, err error) error {
-		if d.IsDir() && d.Name() == ".git" {
-			_, err := git.PlainOpen(path)
-			path = strings.TrimPrefix(filepath.Dir(path), SettingRootDir)
-			if err == nil {
-				SettingRegisteredRepos = append(SettingRegisteredRepos, path)
+	err := filepath.WalkDir(SettingRootDir, func(path string, d fs.DirEntry, ierr error) error {
+		if ierr != nil {
+			log.Println("cannot open directory:", ierr)
+			return fs.SkipDir
+		}
+		var isGitDir bool
+		if d.IsDir() {
+			isGitDir = d.Name() == ".git"
+		} else {
+			// Bare repo
+			isGitDir = d.Name() == "config"
+		}
+		if isGitDir {
+			path = filepath.Dir(path)
+			_, ierr = git.PlainOpen(path)
+			if ierr == nil {
+				SettingRegisteredRepos = append(SettingRegisteredRepos, strings.TrimPrefix(path, SettingRootDir))
+			} else {
+				log.Printf("failed to open %v: %v\n", path, ierr)
 			}
+			return fs.SkipDir
 		}
 		return nil
 	})

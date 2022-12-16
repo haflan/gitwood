@@ -116,6 +116,16 @@ func (pc *PageContext) requireCommit(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+func commitCacheKey(projectPath, commitHash, operation string) string {
+	sum := sha256.Sum256([]byte(strings.Join([]string{projectPath, commitHash, "todo"}, "@")))
+	return hex.EncodeToString(sum[:])[:SettingCacheHashSize]
+}
+
+func slashes(in string) string {
+	in = "/" + strings.TrimPrefix(in, "/")
+	return strings.TrimSuffix(in, "/") + "/"
+}
+
 const (
 	sinceMinute = time.Minute
 	sinceHours  = time.Hour
@@ -124,11 +134,6 @@ const (
 	sinceMonth = 31 * sinceDay
 	sinceYear  = 365 * sinceDay
 )
-
-func commitCacheKey(projectPath, commitHash, operation string) string {
-	sum := sha256.Sum256([]byte(strings.Join([]string{projectPath, commitHash, "todo"}, "@")))
-	return hex.EncodeToString(sum[:])[:SettingCacheHashSize]
-}
 
 func prettyTime(ts time.Time) string {
 	since := time.Since(ts)
