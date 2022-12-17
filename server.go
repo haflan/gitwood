@@ -23,8 +23,9 @@ var (
 )
 
 type Link struct {
-	Text string
-	Href string
+	Active bool
+	Text   string
+	Href   string
 }
 
 type PageData struct {
@@ -93,6 +94,7 @@ func serve() {
 			pc.Title += " - " + pc.Operation
 		}
 		pc.requireRepoOrList(w, projectPath)
+		pc.generateIndex()
 		if pc.Repo == nil {
 			return
 		}
@@ -193,7 +195,7 @@ func (pc *PageContext) todoDetailsHandler(w http.ResponseWriter, r *http.Request
 	}
 	todoRefs := map[string]string{}
 	for tr := range todoMap {
-		todoRefs[tr] = path.Join("/"+pc.RootPath, pc.projectPath, "-", "todo") + "?id=" + tr
+		todoRefs[tr] = path.Join("/", pc.RootPath, pc.projectPath, "-", "todo") + "?id=" + tr
 	}
 	data := TodoDetailsData{
 		PageData:        pc.PageData,
@@ -201,4 +203,18 @@ func (pc *PageContext) todoDetailsHandler(w http.ResponseWriter, r *http.Request
 		RenderedDetails: markdownToHTML(todoRefs, fullTodo.Details),
 	}
 	logPageTmplErr("todo_details", todoDetailsTmpl.Execute(w, data))
+}
+
+func (pc *PageContext) generateIndex() {
+	if pc.Repo == nil {
+		return
+	}
+	pages := []string{"log", "refs", "files", "todo"}
+	for _, page := range pages {
+		pc.Index = append(pc.Index, Link{
+			Text:   page,
+			Href:   path.Join("/", pc.ProjectLink, "-", page),
+			Active: pc.Operation == page,
+		})
+	}
 }

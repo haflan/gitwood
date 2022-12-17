@@ -10,13 +10,24 @@
 </head>
 <body>
     <header>
-    {{range .Index}}
-    {{end}}
-    <a id="bc-home" href="/{{.RootPath}}">gw</a>
-    {{range .Breadcrumbs}}
-        / <a href="{{.Href}}{{if $.Operation}}/-/{{$.Operation}}{{end}}">{{.Text}}</a>
-    {{end}}
-    {{if .FriendlyCommit}}<span id="bc-commit">@{{.FriendlyCommit}}</span>{{end}}
+      <div id="header-breadcrumbs">
+        <a id="bc-home" href="/{{.RootPath}}">gw</a>
+        {{range .Breadcrumbs}}
+            / <a href="{{.Href}}{{if $.Operation}}/-/{{$.Operation}}{{end}}">{{.Text}}</a>
+        {{end}}
+        {{if .FriendlyCommit}}<span id="bc-commit">@{{.FriendlyCommit}}</span>{{end}}
+      </div>
+      {{if .Index}}
+      <div id="header-index">
+      {{range .Index}}
+        {{if .Active}}
+        <a class="current-page">/{{.Text}} </a>
+        {{else}}
+        <a href="{{.Href}}">/{{.Text}} </a>
+        {{end}}
+      {{end}}
+      </div>
+      {{end}}
     </header>
     {{block "contents" .}}gitwood{{end}}
 </body>

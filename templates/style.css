@@ -16,8 +16,42 @@ a:hover, a.ref-link {
     color: rgb(9, 105, 218) !important;
 }
 
-header {
-    margin-bottom: 0.5em;
+@media screen and (max-width: 600px) {
+    header {
+        display: block;
+    }
+    #header-breadcrumbs {
+        margin-bottom: 0.5em;
+        padding-bottom: 0.5em;
+        border-bottom: 1px solid rgb(236, 236, 239);
+    }
+    #header-index {
+        /*text-transform: uppercase;*/
+        margin-bottom: 0.5em;
+        padding-bottom: 0.5em;
+        border-bottom: 1px solid rgb(236, 236, 239);
+    }
+}
+
+@media screen and (min-width: 601px) {
+    header {
+        display: flex;
+        margin-bottom: 0.5em;
+        padding-bottom: 0.5em;
+        border-bottom: 1px solid rgb(236, 236, 239);
+    }
+}
+
+.current-page {
+    font-weight: bold;
+}
+
+a.current-page:hover {
+    color: black !important;
+}
+
+#header-index {
+    margin-left: auto;
 }
 
 #bc-home {
@@ -31,10 +65,6 @@ header {
     color: rgb(180, 180, 183);
 }
 
-#gw-todo-full {
-    border-top: 1px solid rgb(236, 236, 239);
-}
-
 
 .gw-error-code {
     font-weight: bold;
@@ -43,7 +73,7 @@ header {
 
 .gw-todo, .gw-repo {
     padding: 12px;
-    border-top: 1px solid rgb(236, 236, 239);
+    border-bottom: 1px solid rgb(236, 236, 239);
     box-sizing: border-box;
 }
 
