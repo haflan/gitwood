@@ -74,7 +74,7 @@ func serve() {
 		// General format of paths is <project path>[/-/<operation>][/<resource>]
 		projectPathOperation := strings.Split(rpath, "/-/")
 		projectPath := projectPathOperation[0]
-		// TODO [use_files_as_default]: When file page is implemented, used that as default project page
+		// TODO [use_files_as_default]: When file page is implemented, use that as default project page
 		pc := PageContext{
 			PageData: PageData{
 				Title:       "gitwood",

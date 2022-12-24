@@ -1,0 +1,38 @@
+Todos here constitutes the gitwood v1 milestone.
+
+TODO [page_log]: (B) feature: simple commit log.
+`/log` should list the commit history for the given commit hash / ref.
+
+TODO [page_files]: (B) feature: file browser.
+`/files` should list all files for the given commit.
+While a directory structure might be implemented eventually,
+start with flat mode, i.e. list all files in the repo on one page,
+just like `stagit` does.
+
+TODO [page_refs]: (B) feature: refs browser.
+`/refs` should list the branches and tags, just like `stagit` does.
+
+TODO [todo_use_id_mapping]: (B) Always refer to todo by ID instead of filename + line num.
+_Almost done - what remains: Use a path param instead of query params, so that the link looks like
+`/gitwood/-/todo/todo_use_id_mapping`, which is slightly more user friendly._
+
+
+TODO [todo_details_page]: (A) feature: Todo details page.
+In gitwood, a todo for a certain repository is fully identified by these parameters:
+---
+* commit (hash or ref)
+* filename
+* line number
+---
+The todo page handler finds the given file for the given commit and starts reading details from subsequent lines.
+Exactly what subsequent lines are treated as todo details depends on the context.
+#imp_subseq_line_detection talks more about that.
+
+NOTE [todo_details_page]: In addition to reading all the details about the Todo,
+find any mentions of it in the active commit, using its ID.
+Mentions should come in two forms: _plain) and _note_.
+Plain mentions are all lines that simply contain the Todo ID,
+while _notes_ are on the format `NOTE [<todo_id>]: <contents>`.
+In the Todo details page, mentions will look similar to Git{hub,lab}'s issue mentions,
+e.g. `mentioned in <filename>#<line>`, which will link to the file and line num
+(ideally link to associated todos eventually, but that's more complex, also see todo_references).

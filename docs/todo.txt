@@ -45,34 +45,16 @@ When data is generated, cache function writes to the channel and sets it to nil.
 So for a handler to read from cache, the cache channel must be nil,
 otherwise the handler must wait for the channel or timeout.
 
-TODO [todo_details_page]: (B) feature: Todo details page.
-In gitwood, a todo for a certain repository is fully identified by these parameters:
----
-* commit (hash or ref)
-* filename
-* line number
----
-The todo page handler finds the given file for the given commit and starts reading details from subsequent lines.
-Exactly what subsequent lines are treated as todo details depends on the context.
-#imp_subseq_line_detection talks more about that.
-
-NOTE [todo_details_page]: In addition to reading all the details about the Todo,
-find any mentions of it in the active commit, using its ID.
-Mentions should come in two forms: _plain) and _note_.
-Plain mentions are all lines that simply contain the Todo ID,
-while _notes_ are on the format `NOTE [<todo_id>]: <contents>`.
-In the Todo details page, mentions will look similar to Git{hub,lab}'s issue mentions,
-e.g. `mentioned in <filename>#<line>`, which will link to the file and line num
-(ideally link to associated todos eventually, but that's more complex, also see todo_references).
-
 TODO [todo_sort_and_filter]: feature: Add inputs for sorting and filtering todo list. 
 
 TODO [todo_search]: feature: Free text search for todos
 This should search in todo details too, so it kinda depends on caching to avoid repeating such a heavy operation.
 [fuzzysearch](https://github.com/lithammer/fuzzysearch) is worth considering.
 
-TODO [file_search]: feature: Free text search for file names.
+TODO [file_search]: feature: Free text search for file names (and contents?).
 Similar to #todo_search.
+After implementing server-side fuzzy search,
+the list of files can be split into pages of 50 or so files each.
 
 TODO [todo_references]: feature: Link to other todos, like it works in issues on Github and the like.
 To make it easier to parse, use the `#` prefix just like all other Git services do.
@@ -80,14 +62,6 @@ This feature requires the list of todos for the active commit,
 so if it doesn't exist, a cache job (see #persistent_and_cache) should be triggered and waited for,
 maybe a second max.
 If cache job doesn't finish in time, links will simply not be generated before the page is returned (best effort)
-
-TODO [todo_use_id_mapping]: Always refer to todo by ID instead of filename + line num.
-In addition to making it easier to implement #todo_references,
-the new mapping from Todo ID to Todo makes it easy to implement this.
-The advantage of referring to Todos by ID instead of file + line is that the
-link to a Todo stays the same across commits, even if the source file changes.  
-_Maybe use a path param instead of query params too, so that the link looks like
-`/gitwood/-/todo/todo_use_id_mapping`, which is slightly more user friendly._
 
 TODO [support_submodules]: feature (local): Support submodules, both in requests and autoregistry.
 Mostly relevant for local (non-bare) git repos, not on servers.
@@ -117,3 +91,36 @@ _The scope will be limited to the minimal work required to avoid any broken page
 at least for starters.
 
 TODO [repo_descriptions]: Read the 'description' file in each repo and use as one-line description
+
+TODO [formal_todo_spec]: Specify issue-like todos "formally"
+It's easier to make the parser when the format is specified clearly.
+Maybe look some more for similar ideas before writing it.
+I've already found:
+---
+* [todo.txt](https://github.com/todotxt/todo.txt):
+  For General (non-dev) todo lists, but worth considering as inspiration.
+* https://conventionaltodos.org/: The entire project is a todo atm ;)
+---
+How the format looks determines how complex the parser implementation will be.
+It's worth considering a _simple_ parser because that might lead to better TODOs,
+in addition to being easier to implement.
+
+
+TODO [extract_details_immediately]: Extract todo details immediately.
+Extracting details from subsequent lines is not that heavy an operation.
+No reason to do it in a separate step.
+Merge `Extract` and `ExtractFull` and just find everything immediately?
+Launching a new Go routine for each TODO found might be a good idea,
+although it will of course require some kind of joining before the final struct (and JSON) is built.
+---
+Finding _mentions_, as discussed in #todo_details_page,
+should probably still be a separate operation that's done when the full todo is requested.
+
+TODO [cleanup_path_handling]: Clean up path handling.
+All handling of paths (in links) need a thorough rewriting - no more ad-hoc solutions.
+There are still some links that don't work as intended, e.g. breadcrumbs.
+---
+Introduce a `PageContext.generateLink()` function,
+which creates link with the right query params etc.
+based on current query params and target operation,
+e.g. keep the commit parameter if it's set and is relevant for the target.
