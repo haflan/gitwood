@@ -26,9 +26,9 @@ var (
 )
 
 type Link struct {
-	Active bool
-	Text   string
-	Href   string
+	Current bool
+	Text    string
+	Href    string
 }
 
 type PageData struct {
@@ -278,7 +278,7 @@ func (pc *PageContext) fileContentsHandler(w http.ResponseWriter, r *http.Reques
 	pageData := FileContentsPageData{
 		PageData:     pc.PageData,
 		FileLines:    strings.Split(contents, "\n"),
-		HideLineNums: r.URL.Query().Get("num") == "false",
+		HideLineNums: r.URL.Query().Get("nums") == "false",
 	}
 	logPageTmplErr("file_contents", fileContentsTmpl.Execute(w, pageData))
 }
@@ -290,9 +290,9 @@ func (pc *PageContext) generateIndex() {
 	pages := []string{"log", "refs", "files", "todo"}
 	for _, page := range pages {
 		pc.Index = append(pc.Index, Link{
-			Text:   page,
-			Href:   path.Join("/", pc.ProjectLink, "-", page),
-			Active: pc.Operation == page,
+			Text:    page,
+			Href:    path.Join("/", pc.ProjectLink, "-", page),
+			Current: pc.Operation == page,
 		})
 	}
 }

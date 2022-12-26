@@ -1,4 +1,15 @@
 {{define "contents"}}
+<div id="gw-file-info">
+    <span id="gw-file-name">{{.Resource}}</span>
+    <span id="gw-file-buttons">
+        <a class="gw-button" href="?raw=true"><code>raw</code></a>
+        {{if $.HideLineNums}}
+        <a class="gw-button" href="?nums=true"><code>+nums</code></a>
+        {{else}}
+        <a class="gw-button" href="?nums=false"><code>-nums</code></a>
+        {{end}}
+    </span>
+</div>
 <div id="gw-file-contents">
     <table>
         {{range $i, $line := .FileLines}}

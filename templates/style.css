@@ -46,6 +46,12 @@ a:hover, a.ref-link {
     font-weight: bold;
 }
 
+.gw-button {
+    border: 1px solid yellowgreen;
+    border-radius: 15px;
+    padding: 3px;
+}
+
 a.current-page:hover {
     color: black !important;
 }
@@ -114,6 +120,15 @@ a.current-page:hover {
 
 .gw-file-line:target {
     background-color: yellow;
+}
+
+#gw-file-info {
+    border-bottom: 1px solid rgb(236, 236, 239);
+    display: flex;
+}
+
+#gw-file-buttons {
+    margin-left: auto;
 }
 
 #gw-file-contents {

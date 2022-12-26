@@ -20,11 +20,7 @@
       {{if .Index}}
       <div id="header-index">
       {{range .Index}}
-        {{if .Active}}
-        <a class="current-page">/{{.Text}} </a>
-        {{else}}
-        <a href="{{.Href}}">/{{.Text}} </a>
-        {{end}}
+        <a href="{{.Href}}"{{if .Current}} class="current-page"{{end}}>/{{.Text}} </a>
       {{end}}
       </div>
       {{end}}
