@@ -9,7 +9,7 @@
             <span class="gw-todo-pri">({{.Priority}})</span>
             <span class="gw-todo-dot">&middot;</span>
             {{end}}
-            <a href="{{$.ProjectLink}}-/files/{{.FileName}}#{{.Line}}" title="File context"><span class="gw-todo-id">{{.ID}}</span></a>
+            <a href="{{$.ProjectLink}}-/files/{{.FileName}}#L{{.Line}}" title="File context"><span class="gw-todo-id">{{.ID}}</span></a>
             {{ if or .Author .TimeAgoString}}
             <span class="gw-todo-dot">&middot;</span>
             <span class="gw-todo-info-created">Created </span> 

@@ -3,12 +3,6 @@ Todos here constitutes the gitwood v1 milestone.
 TODO [page_log]: (B) feature: simple commit log.
 `/log` should list the commit history for the given commit hash / ref.
 
-TODO [page_files]: (B) feature: file browser.
-`/files` should list all files for the given commit.
-While a directory structure might be implemented eventually,
-start with flat mode, i.e. list all files in the repo on one page,
-just like `stagit` does.
-
 TODO [page_refs]: (B) feature: refs browser.
 `/refs` should list the branches and tags, just like `stagit` does.
 

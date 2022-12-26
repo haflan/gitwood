@@ -111,3 +111,11 @@ a.current-page:hover {
 .gw-todo-id {
     font-family: monospace;
 }
+
+.gw-file-line:target {
+    background-color: yellow;
+}
+
+#gw-file-contents {
+    overflow: scroll;
+}

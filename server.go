@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"errors"
 	"html/template"
 	"log"
 	"net/http"
@@ -15,11 +16,13 @@ import (
 
 var (
 	//go:embed templates/*
-	wwwFS           embed.FS
-	todoTmpl        = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/todo.tmpl.html"))
-	todoDetailsTmpl = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/todo-details.tmpl.html"))
-	errorTmpl       = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/error.tmpl.html"))
-	reposTmpl       = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/repos.tmpl.html"))
+	wwwFS            embed.FS
+	todoTmpl         = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/todo.tmpl.html"))
+	todoDetailsTmpl  = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/todo-details.tmpl.html"))
+	errorTmpl        = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/error.tmpl.html"))
+	reposTmpl        = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/repos.tmpl.html"))
+	filesTmpl        = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/files.tmpl.html"))
+	fileContentsTmpl = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/file-contents.tmpl.html"))
 )
 
 type Link struct {
@@ -64,6 +67,17 @@ type TodoDetailsData struct {
 	RenderedDetails template.HTML
 }
 
+type FilesPageData struct {
+	PageData
+	Files []Link
+}
+
+type FileContentsPageData struct {
+	PageData
+	HideLineNums bool
+	FileLines    []string
+}
+
 func serve() {
 	log.Println("starting server at", SettingPort)
 	http.ListenAndServe(SettingPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -89,7 +103,7 @@ func serve() {
 			op := strings.Split(projectPathOperation[1], "/")
 			pc.Operation = op[0]
 			if len(op) > 1 && op[1] != "" {
-				pc.Resource = op[1]
+				pc.Resource = strings.Join(op[1:], "/")
 			}
 			pc.Title += " - " + pc.Operation
 		}
@@ -116,7 +130,7 @@ func serve() {
 		case "todo":
 			pc.todoHandler(w, r)
 		case "files":
-			fallthrough
+			pc.filesHandler(w, r)
 		case "log":
 			fallthrough
 		default:
@@ -203,6 +217,70 @@ func (pc *PageContext) todoDetailsHandler(w http.ResponseWriter, r *http.Request
 		RenderedDetails: markdownToHTML(todoRefs, fullTodo.Details),
 	}
 	logPageTmplErr("todo_details", todoDetailsTmpl.Execute(w, data))
+}
+
+func (pc *PageContext) filesHandler(w http.ResponseWriter, r *http.Request) {
+	if pc.Resource == "" {
+		pc.fileListHandler(w, r)
+	} else {
+		pc.fileContentsHandler(w, r)
+	}
+}
+
+func (pc *PageContext) fileListHandler(w http.ResponseWriter, r *http.Request) {
+	fIter, err := pc.Commit.Files()
+	if err != nil {
+		pc.errorPageServer(w, "failed to find commit files", err)
+		return
+	}
+	var fileLinks []Link
+	err = fIter.ForEach(func(f *object.File) error {
+		fileLinks = append(fileLinks, Link{
+			Href: path.Join("/", pc.RootPath, pc.projectPath, "-", "files", f.Name),
+			Text: f.Name,
+		})
+		return nil
+	})
+	if err != nil {
+		pc.errorPageServer(w, "failed to read commit file names", err)
+		return
+	}
+	logPageTmplErr("files", filesTmpl.Execute(w, FilesPageData{
+		PageData: pc.PageData,
+		Files:    fileLinks,
+	}))
+}
+
+func (pc *PageContext) fileContentsHandler(w http.ResponseWriter, r *http.Request) {
+	f, err := pc.Commit.File(pc.Resource)
+	if err != nil {
+		if errors.Is(err, object.ErrFileNotFound) {
+			pc.errorPageNotFound(w, "no file found with path "+pc.Resource)
+		} else {
+			pc.errorPageServer(w, "failed to read load file: "+pc.Resource, err)
+		}
+		return
+	}
+	var contents string
+	if isBin, _ := f.IsBinary(); isBin {
+		contents = "(file is binary)"
+	} else {
+		contents, err = f.Contents()
+		if err != nil {
+			pc.errorPageServer(w, "failed to read file contents", err)
+			return
+		}
+	}
+	if r.URL.Query().Get("raw") == "true" {
+		w.Write([]byte(contents))
+		return
+	}
+	pageData := FileContentsPageData{
+		PageData:     pc.PageData,
+		FileLines:    strings.Split(contents, "\n"),
+		HideLineNums: r.URL.Query().Get("num") == "false",
+	}
+	logPageTmplErr("file_contents", fileContentsTmpl.Execute(w, pageData))
 }
 
 func (pc *PageContext) generateIndex() {

@@ -1,0 +1,12 @@
+{{define "contents"}}
+<div id="gw-file-contents">
+    <table>
+        {{range $i, $line := .FileLines}}
+        <tr id="L{{$i}}" class="gw-file-line" style="line-height: 0;">
+            {{if not $.HideLineNums}}<td><a href="#L{{$i}}"><code>{{$i}}</code></a></td>{{end}}
+            <td><pre>{{$line}}</pre></td>
+        </tr>
+        {{end}}
+    </table>
+</div>
+{{end}}
