@@ -1,28 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Git log</title>
-    <style>
-        body {
-            font-family: monospace;
-        }
-        li {
-            list-style: none;
-            border: 1px solid grey;
-            border-radius: 3px;
-            margin: 3px;
-            padding: 3px;
-        }
-    </style>
-</head>
-<body>
-    <ul>
+{{define "contents"}}
+<div id="gw-log">
     {{range .Log}}
-        <li>{{.Message}}</li>
+    <div class="gw-log-entry">
+        <div><b class="gw-log-entry-title">{{.Title}}</b></div>
+        <div class="gw-log-entry-body">{{.Message}}</div>
+    </div>
     {{end}}
-    </ul>
-</body>
-</html>
+</div>
+{{end}}

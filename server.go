@@ -23,6 +23,7 @@ var (
 	reposTmpl        = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/repos.tmpl.html"))
 	filesTmpl        = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/files.tmpl.html"))
 	fileContentsTmpl = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/file-contents.tmpl.html"))
+	logTmpl          = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/log.tmpl.html"))
 )
 
 type Link struct {
@@ -132,7 +133,7 @@ func serve() {
 		case "files":
 			pc.filesHandler(w, r)
 		case "log":
-			fallthrough
+			pc.logHandler(w, r)
 		default:
 			pc.errorPageNotFound(w, pc.Operation+" does not exist")
 		}
@@ -281,6 +282,34 @@ func (pc *PageContext) fileContentsHandler(w http.ResponseWriter, r *http.Reques
 		HideLineNums: r.URL.Query().Get("nums") == "false",
 	}
 	logPageTmplErr("file_contents", fileContentsTmpl.Execute(w, pageData))
+}
+
+func (pc *PageContext) logHandler(w http.ResponseWriter, r *http.Request) {
+	lIter, err := pc.Repo.Log(&git.LogOptions{From: pc.Commit.Hash})
+	if err != nil {
+		pc.errorPageServer(w, "failed to fetch log", err)
+		return
+	}
+	var log []LogEntry
+	todoMap := pc.requireCachedTodos(w, pc.projectPath, pc.Commit.Hash.String(), 3*time.Second)
+	todoRefs := map[string]string{}
+	for tr := range todoMap {
+		todoRefs[tr] = path.Join("/", pc.RootPath, pc.projectPath, "-", "todo") + "?id=" + tr
+	}
+	lIter.ForEach(func(c *object.Commit) error {
+		messageLines := strings.Split(c.Message, "\n")
+		log = append(log, LogEntry{
+			Hash:      c.Hash.String(),
+			Title:     messageLines[0],
+			Message:   markdownToHTML(todoRefs, strings.Join(messageLines[1:], "\n")),
+			Timestamp: c.Author.When,
+		})
+		return nil
+	})
+	logPageTmplErr("log", logTmpl.Execute(w, LogPageData{
+		PageData: pc.PageData,
+		Log:      log,
+	}))
 }
 
 func (pc *PageContext) generateIndex() {
