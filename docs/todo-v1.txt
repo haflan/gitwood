@@ -1,11 +1,5 @@
 Todos here constitutes the gitwood v1 milestone.
 
-TODO [page_log]: (B) feature: simple commit log.
-`/log` should list the commit history for the given commit hash / ref.
-
-TODO [page_refs]: (B) feature: refs browser.
-`/refs` should list the branches and tags, just like `stagit` does.
-
 TODO [todo_use_id_mapping]: (B) Always refer to todo by ID instead of filename + line num.
 _Almost done - what remains: Use a path param instead of query params, so that the link looks like
 `/gitwood/-/todo/todo_use_id_mapping`, which is slightly more user friendly._

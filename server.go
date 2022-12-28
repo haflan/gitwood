@@ -18,6 +18,7 @@ import (
 var (
 	//go:embed templates/*
 	wwwFS            embed.FS
+	indexTmpl        = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/index.tmpl.html"))
 	todoTmpl         = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/todo.tmpl.html"))
 	todoDetailsTmpl  = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/todo-details.tmpl.html"))
 	errorTmpl        = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/error.tmpl.html"))
@@ -57,6 +58,11 @@ type PageContext struct {
 type RepoPageData struct {
 	PageData
 	Repos []RepoInfo
+}
+
+type IndexPageData struct {
+	PageData
+	ReadMe template.HTML
 }
 
 type TodoPageData struct {
@@ -134,7 +140,7 @@ func serve() {
 		}
 		switch pc.Operation {
 		case "":
-			fallthrough
+			pc.indexHandler(w, r)
 		case "todo":
 			pc.todoHandler(w, r)
 		case "files":
@@ -161,6 +167,22 @@ func staticFile(w http.ResponseWriter, r *http.Request, rpath string) bool {
 	w.Header().Add("Content-Type", contentType)
 	w.Write(out)
 	return true
+}
+
+func (pc *PageContext) indexHandler(w http.ResponseWriter, r *http.Request) {
+	readmeFile, _ := pc.Commit.File("README")
+	if readmeFile == nil {
+		readmeFile, _ = pc.Commit.File("README.md")
+	}
+	var readme string
+	if readmeFile != nil {
+		readme, _ = readmeFile.Contents()
+	}
+	data := IndexPageData{PageData: pc.PageData}
+	if readme != "" {
+		data.ReadMe = markdownToHTML(nil, readme)
+	}
+	logPageTmplErr("index", indexTmpl.Execute(w, data))
 }
 
 func (pc *PageContext) todoHandler(w http.ResponseWriter, r *http.Request) {
@@ -347,6 +369,11 @@ func (pc *PageContext) generateIndex() {
 		return
 	}
 	pages := []string{"refs", "log", "files", "todo"}
+	pc.Index = []Link{{
+		Text:    "info",
+		Href:    path.Join("/", pc.ProjectLink),
+		Current: pc.Operation == "",
+	}}
 	for _, page := range pages {
 		pc.Index = append(pc.Index, Link{
 			Text:    page,

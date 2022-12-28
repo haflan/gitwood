@@ -124,3 +124,10 @@ Introduce a `PageContext.generateLink()` function,
 which creates link with the right query params etc.
 based on current query params and target operation,
 e.g. keep the commit parameter if it's set and is relevant for the target.
+
+
+TODO [concurrency_panic]: gitwood sometimes panics because of go-git.
+Discovered this when testing `gitwood` with some [suckless repos](https://git.suckless.org/).
+`gitwood` panicked repeatedly with `fatal error: concurrent map read and map write`.
+The reason is probably that [go-git is not thread-safe](https://github.com/go-git/go-git/issues/48).
+So I guess a single worker routine must be maintained for performing go-git operations.
