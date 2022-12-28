@@ -70,6 +70,8 @@ func makeBreadcrumbs(rpath string) []Link {
 		}
 		if i != len(parts)-1 {
 			l.Href = path.Join("/", SettingServerPathPrefix, strings.Join(parts[:i+1], "/"))
+		} else {
+			l.Current = true
 		}
 		links = append(links, l)
 	}

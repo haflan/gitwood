@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
@@ -24,6 +25,7 @@ var (
 	filesTmpl        = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/files.tmpl.html"))
 	fileContentsTmpl = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/file-contents.tmpl.html"))
 	logTmpl          = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/log.tmpl.html"))
+	refsTmpl         = template.Must(template.ParseFS(wwwFS, "templates/wrapper.tmpl.html", "templates/refs.tmpl.html"))
 )
 
 type Link struct {
@@ -79,6 +81,12 @@ type FileContentsPageData struct {
 	FileLines    []string
 }
 
+type RefsPageData struct {
+	PageData
+	Branches []string
+	Tags     []string
+}
+
 func serve() {
 	log.Println("starting server at", SettingPort)
 	http.ListenAndServe(SettingPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -116,10 +124,9 @@ func serve() {
 
 		// Operations that don't depend on commit
 		switch pc.Operation {
-		case "tags":
-			fallthrough
-		case "branches":
-			pc.errorPageNotFound(w, pc.Operation+" not implemented yet")
+		case "refs":
+			pc.refsHandler(w, r)
+			return
 		}
 		pc.requireCommit(w, r)
 		if pc.Commit == nil {
@@ -312,11 +319,34 @@ func (pc *PageContext) logHandler(w http.ResponseWriter, r *http.Request) {
 	}))
 }
 
+func (pc *PageContext) refsHandler(w http.ResponseWriter, r *http.Request) {
+	data := RefsPageData{PageData: pc.PageData}
+	bIter, err := pc.Repo.Branches()
+	if err != nil {
+		pc.errorPageServer(w, "failed to load repo branches", err)
+		return
+	}
+	bIter.ForEach(func(r *plumbing.Reference) error {
+		data.Branches = append(data.Branches, r.Name().Short())
+		return nil
+	})
+	tIter, err := pc.Repo.Tags()
+	if err != nil {
+		pc.errorPageServer(w, "failed to load repo tags", err)
+		return
+	}
+	tIter.ForEach(func(r *plumbing.Reference) error {
+		data.Tags = append(data.Tags, r.Name().Short())
+		return nil
+	})
+	logPageTmplErr("refs", refsTmpl.Execute(w, data))
+}
+
 func (pc *PageContext) generateIndex() {
 	if pc.Repo == nil {
 		return
 	}
-	pages := []string{"log", "refs", "files", "todo"}
+	pages := []string{"refs", "log", "files", "todo"}
 	for _, page := range pages {
 		pc.Index = append(pc.Index, Link{
 			Text:    page,
