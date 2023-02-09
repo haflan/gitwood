@@ -131,3 +131,11 @@ Discovered this when testing `gitwood` with some [suckless repos](https://git.su
 `gitwood` panicked repeatedly with `fatal error: concurrent map read and map write`.
 The reason is probably that [go-git is not thread-safe](https://github.com/go-git/go-git/issues/48).
 So I guess a single worker routine must be maintained for performing go-git operations.
+
+
+TODO [cache_pages]: Cache todo pages and list of hashes.
+_Wrote this todo a while ago, and now I'm a little bit confused -
+why not cache the entire todo list pages too? Revisit..._
+> gitwood foundation:
+> Cache individual todo pages w/ hash and for each new commit store list of hashes.
+> This way no new cache is created unless neeeded.
