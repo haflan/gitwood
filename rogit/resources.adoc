@@ -1,0 +1,4 @@
+== Resources - Git Internals
+
+=== Pack files
+- https://codewords.recurse.com/issues/three/unpacking-git-packfiles

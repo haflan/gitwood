@@ -1,0 +1,3 @@
+* Implement delta encoding and finish pack file handling
+* Clean up and make code usable as library 
+* When this is usable, move everything to `gitwood` and use it there instead of go-git.

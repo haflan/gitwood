@@ -6,3 +6,7 @@ Heavily inspired by [stagit](https://codemadness.org/stagit.html) and [cgit](htt
 but more mobile-friendly and with an additional feature: _issue-like TODOs_.
 <!-- Link to #formal_todo_spec once that's written ^ -->
 With this addition, `gitwood` can in principle replace heavier git services for simple projects.
+
+## rogit
+`gitwood` implements the limited set of `git` functionality it needs in the package `rogit` (read-only git).
+<!-- (^ Work in progress - rogit will weplace go-git completely once done). -->

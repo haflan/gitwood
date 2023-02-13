@@ -1,0 +1,89 @@
+== Git pack deltas
+
+Git pack deltas are already explained pretty well
+https://git-scm.com/docs/pack-format/2.31.0#_deltified_representation[here],
+but I'll try to summarize.
+
+=== Variable Length Integers (`varint`)
+A `varint` consists of byte(s) whose MSB is set if there are more bytes to read.
+In other words, 1 bit of each byte is used for determining if this is the last byte in the `varint`,
+and the 7 bits remaining add to the actual value of the varint.
+Assuming the varint starts at address `varint[0]`, each iteration should add to the result like this:
+
+    result |= (0b0111_1111 & varint[i]) << (i * 7)
+
+
+=== Deltas
+A delta consists of:
+
+* `varint` length of source / [blue]#base object#
+* `varint` length of target object
+* a set of copy / insert instructions
+
+==== Instructions
+The MSB of the first byte of an instruction is `1` for the _copy_ instruction and `0` for _insert_.
+
+===== Copy
+In addition to the MSB of `1`, the first byte of the copy instruction consists of:
+
+* *[blue]#4 offset bits#*
+* *[green]#3 size bits#*.
+
+These bits determine how the next byte(s) in the instruction will be read.
+Here's an example to demonstrate how this works:
+
++++
+<div style="font-family: monospace; font-size: 2em; text-align: center;">
+    1<span style="border: 3px solid green;border-radius: 3px;">0<span style="color: purple;">1</span>0</span><span style="border: 3px solid blue;border-radius: 3px;">0<span style="color: orange">1</span><span style="color: red">1</span>0</span>
+    <span style="color: red">01001101</span>
+    <span style="color: orange">00000010</span>
+    <span style="color: purple">00001010</span>
+</div>
++++
+
++++
+<div style="font-family:monospace; font-size: 1.5em;">
+    <span style="color:blue;">offset</span> = 0 | (0b<span style="color:red">01001101</span> &lt;&lt; 8) | (0b<span style="color:orange;">00000010</span> &lt;&lt; 2*8) | 0 << 3*8
+    = <span style="color:blue;">150784</span>
+</div>
++++
+
++++
+<div style="font-family:monospace; font-size: 1.5em;">
+    <span style="color:green;">size</span> = 0 | (0b<span style="color:purple">00001010</span> &lt;&lt; 8) | 0 << 8*2
+    = <span style="color:green;">2560</span>
+</div>
++++
+
+The number of bytes to copy is `2560`.
+
+So the instruction reads 
+
+> Copy *2560* bytes from the base object, starting at byte number *150784*
+
+===== Insert
+Insert are more straight-forward, the 7 bits that follow MSB of the first byte simply determines the number of bytes to be inserted.
+The rest of the instruction is these bytes.
+
++++
+<div style="font-family: monospace; font-size: 2em; text-align: center;">
+    0<span style="border: 3px solid green;border-radius: 3px;">0000010</span>01001010 10011001
+</div>
++++
+
++++
+<div style="font-family:monospace; font-size: 1.5em;">
+    <span style="color:green;">size</span> = 0b<span style="color:green">00000010</span> = <span style="color: green;">2</span>
+</div>
++++
+
+Instruction is:
+
+> Insert the following *2* bytes
+
+=== Delta Object types
+Git packs include two object types that cannot occur outside of packs:
+`ofs-delta` and `ref-delta`.
+The former contains an _offset_ to the [blue]#base object#,
+while the latter _references_ the base object by name (hash).
+`ref-delta` can refer to an object that's outside of the pack.

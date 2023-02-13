@@ -1,0 +1,15 @@
+== rogit: Left off
+
+Next step is to implement delta patching, in order to support all pack files.
+Without support for deltas, the app/lib will crash whenever it encounters a deltified packed object.
+
+`pack.go` is prepared for the delta implementation - see the the "TESTING TESTING..." comment.
+See link:./delta-explained.adoc[] for details about delta encoding.
+
+=== Full "Blog"
+* Explored https://github.com/git/git/blob/master/patch-delta.c in order to see how things work 
+* Found that the function `patch_delta()` is used in `t/helper/test-delta.c`,
+  and that running `make` in the `git` repo builds a `test-tool` binary in `t/helper/`
+* Used `test-tools delta -d ...` to generate deltas and analyzed them with the help of
+  https://stefan.saasen.me/articles/git-clone-in-haskell-from-the-bottom-up/#delta-encoding,
+  to see that I'd understood correctly
