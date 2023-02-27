@@ -24,7 +24,7 @@ var (
 	treSimple      = regexp.MustCompile(treBase)
 	treDoubleSlash = regexp.MustCompile(`\/\/\s*` + treBase)
 	treHash        = regexp.MustCompile(`#\s*` + treBase)
-	// imp_subseq_line_detection
+	// #imp_subseq_line_detection
 	extRegexps = map[string]*regexp.Regexp{
 		".go":   treDoubleSlash,
 		".adoc": treDoubleSlash,
@@ -161,7 +161,7 @@ func getLines(c *object.Commit, f *object.File) ([]*git.Line, error) {
 		return nil, fmt.Errorf("%v: %w", f.Name, ErrFileIsBinary)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("file to check if %v is binary: %w", f.Name, err)
+		return nil, fmt.Errorf("failed to check if %v is binary: %w", f.Name, err)
 	}
 	lines, err := f.Lines()
 	if err != nil {
