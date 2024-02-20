@@ -1,4 +1,4 @@
-package rogit
+package gitwood
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ func (r Repo) String() string {
 func (r Repo) HeadCommit() string {
 	fields := strings.Fields(r.Head)
 	if len(fields) == 0 || fields[0] == "" {
-		return "0000000000000000000000000000000000000000"
+		return NULL_HASH
 	}
 	if len(fields[0]) == 40 {
 		return fields[0]
@@ -35,6 +35,10 @@ func (r Repo) HeadCommit() string {
 		}
 		// ...then try info/refs if that fails,
 		// because sometimes it's stored there apparently (haven't found details about this yet).
+		// Update: git update-server-info writes refs to the info/refs file,
+		// kind of as a branch *index* for dumb HTTP servers, so they don't have to traverse the refs directory.
+		// AFAIU `refs/head/` should always exist, though, so I'm not sure what I was struggling with previously.
+		// Maybe I just saw the info/refs file and thought it was the only place where refs are stored.
 		infoRefs, err := os.ReadFile(path.Join(r.GitDir, "info/refs"))
 		if err == nil {
 			for _, line := range strings.Split(string(infoRefs), "\n") {
@@ -45,25 +49,19 @@ func (r Repo) HeadCommit() string {
 			}
 		}
 	}
-	return "0000000000000000000000000000000000000000"
+	return NULL_HASH
 }
 
 func (r Repo) Object(shasum string) (ObjectType, []byte, error) {
+	// Wrong place to do this! Don't even know if the caller wants a commit object.
 	if shasum == "" {
 		shasum = r.HeadCommit()
 	}
-	return openObject(r.GitDir, shasum)
-}
-
-func (r Repo) Commit(shasum string) (*Commit, error) {
-	otype, c, err := r.Object(shasum)
+	otype, o, err := r.openObject(shasum)
 	if err != nil {
-		return nil, err
+		return OBJ_INVALID, nil, fmt.Errorf("failed to open object %v: %w", shasum, err)
 	}
-	if otype != OBJ_COMMIT {
-		return nil, ErrNotACommit
-	}
-	return ParseCommit(shasum, string(c))
+	return otype, o, nil
 }
 
 func (r Repo) Log(shasum string) ([]Commit, error) {
@@ -83,6 +81,17 @@ func (r Repo) Log(shasum string) ([]Commit, error) {
 		commits = append(commits, *commit)
 	}
 	return commits, nil
+}
+
+func (r Repo) WalkToPath(commitSum, path string, tw TreeWalker) (ObjectType, []byte, error) {
+	if commitSum == "" {
+		commitSum = r.HeadCommit()
+	}
+	commit, err := r.Commit(commitSum)
+	if err != nil {
+		return OBJ_INVALID, nil, err
+	}
+	return commit.WalkToPath(path, tw)
 }
 
 func newRepo(gitdir string, head []byte) *Repo {

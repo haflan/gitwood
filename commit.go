@@ -1,4 +1,4 @@
-package rogit
+package gitwood
 
 import (
 	"fmt"
@@ -12,6 +12,7 @@ type Commit struct {
 	Author    string
 	Committer string
 	Message   string
+	repo      Repo
 }
 
 func (c Commit) String() string {
@@ -43,6 +44,34 @@ func ParseCommit(shasum, commitDef string) (*Commit, error) {
 			commit.Committer = line[fs+1:]
 		}
 	}
+	if commit.Tree == "" {
+		return nil, fmt.Errorf("no tree find in commit %v", shasum)
+	}
+	// Check for author and committer too? Not sure what's mandatory.
 	commit.Message = strings.Join(lines[i:], "\n")
 	return &commit, nil
+}
+
+func (r Repo) Commit(sha string) (*Commit, error) {
+	otype, o, err := r.Object(sha)
+	if err != nil {
+		return nil, err
+	}
+	if otype != OBJ_COMMIT {
+		return nil, ErrNotACommit
+	}
+	commit, err := ParseCommit(sha, string(o))
+	if err != nil {
+		return nil, err
+	}
+	commit.repo = r
+	return commit, nil
+}
+
+func (c Commit) WalkToPath(path string, tw TreeWalker) (ObjectType, []byte, error) {
+	tree, err := c.repo.Tree(c.Tree)
+	if err != nil {
+		return OBJ_INVALID, nil, fmt.Errorf("failed to open tree %v: %w", c.Tree, err)
+	}
+	return tree.WalkToPath(path, tw)
 }

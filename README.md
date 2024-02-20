@@ -1,12 +1,5 @@
 # gitwood
-`gitwood` is a plug-and-play web frontend for git
-(_and will eventually work as a static page generator too._)
-
-Heavily inspired by [stagit](https://codemadness.org/stagit.html) and [cgit](https://git.zx2c4.com/cgit/),
-but more mobile-friendly and with an additional feature: _issue-like TODOs_.
-<!-- Link to #formal_todo_spec once that's written ^ -->
-With this addition, `gitwood` can in principle replace heavier git services for simple projects.
-
-## rogit
-`gitwood` implements the limited set of `git` functionality it needs in the package `rogit` (read-only git).
-<!-- (^ Work in progress - rogit will weplace go-git completely once done). -->
+`gitwood` implements a limited set of read-only functionality from `git`.
+It aims to be a dependency-free alternative to [go-git](https://github.com/go-git/go-git) for simple use cases.
+Its design prioritizes thread-safety over performance, and leaves caching to the
+user.
