@@ -73,8 +73,8 @@ func (r Repo) Log(shasum string) ([]Commit, error) {
 		return nil, err
 	}
 	commits := []Commit{*commit}
-	for commit.Parent != "" {
-		commit, err = r.Commit(commit.Parent)
+	for len(commit.Parents) > 0 {
+		commit, err = r.Commit(commit.Parents[0])
 		if err != nil {
 			return commits, err
 		}

@@ -8,7 +8,7 @@ import (
 type Commit struct {
 	ShaSum    string
 	Tree      string
-	Parent    string
+	Parents   []string
 	Author    string
 	Committer string
 	Message   string
@@ -16,10 +16,15 @@ type Commit struct {
 }
 
 func (c Commit) String() string {
-	return fmt.Sprintf(
-		"commit %v\nAuthor: %v\nTree: %v\n\n%v",
-		c.ShaSum, c.Author, c.Tree, c.Message,
+	var parents string
+	for i, p := range c.Parents {
+		parents += fmt.Sprintf("Parent[%d]: %s\n", i, p)
+	}
+	out := fmt.Sprintf(
+		"commit %v\nAuthor: %v\nTree: %v\n%v\n%v\n",
+		c.ShaSum, c.Author, c.Tree, parents, c.Message,
 	)
+	return out
 }
 
 func ParseCommit(shasum, commitDef string) (*Commit, error) {
@@ -37,7 +42,7 @@ func ParseCommit(shasum, commitDef string) (*Commit, error) {
 		case "tree":
 			commit.Tree = line[fs+1:]
 		case "parent":
-			commit.Parent = line[fs+1:]
+			commit.Parents = append(commit.Parents, line[fs+1:])
 		case "author":
 			commit.Author = line[fs+1:]
 		case "committer":
