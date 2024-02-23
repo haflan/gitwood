@@ -50,7 +50,7 @@ func ParseCommit(shasum, commitDef string) (*Commit, error) {
 		}
 	}
 	if commit.Tree == "" {
-		return nil, fmt.Errorf("no tree find in commit %v", shasum)
+		return nil, fmt.Errorf("no tree found in commit %v", shasum)
 	}
 	// Check for author and committer too? Not sure what's mandatory.
 	commit.Message = strings.Join(lines[i:], "\n")
