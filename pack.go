@@ -293,12 +293,12 @@ func (r *Repo) readFromPack(file *os.File, off uint64) (ObjectType, []byte, erro
 	oOff := off
 	buf, err := newBufReader(file, off)
 	if err != nil {
-		return OBJ_INVALID, nil, err
+		return OBJ_INVALID, nil, fmt.Errorf("failed to create buf reader: %w", err)
 	}
 	b, err := buf.ReadByte()
 	off++
 	if err != nil {
-		return OBJ_INVALID, nil, err
+		return OBJ_INVALID, nil, fmt.Errorf("failed to read byte: %w", err)
 	}
 	otype := typeByte(b)
 	osize := uint64(b & 0b1111)

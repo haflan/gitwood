@@ -55,7 +55,11 @@ func (r *Repo) searchAllPacks(shasum string) (ObjectType, []byte, error) {
 	if packfile == "" {
 		return OBJ_INVALID, nil, ErrObjectNotFound
 	}
-	return r.OpenAndReadFromPack(filepath.Join(packdir, packfile), uint64(index))
+	otype, o, err := r.OpenAndReadFromPack(filepath.Join(packdir, packfile), uint64(index))
+	if err != nil {
+		return OBJ_INVALID, nil, fmt.Errorf("failed to read pack %v: %w", packfile, err)
+	}
+	return otype, o, nil
 }
 
 // Optimization (here and everywhere): Use Readers instead of reading and returning the entire object
